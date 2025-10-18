@@ -1,0 +1,97 @@
+"""
+System API Routes - Business Planner.
+
+Health checks, businesses, members, system info.
+
+Reference: docs/03-api/openapi.yaml
+"""
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.domain.models import Business, Member
+from src.infrastructure.database import get_session, check_database_health
+from src.utils.logger import logger
+
+
+router = APIRouter()
+
+
+@router.get("/health")
+async def health_check():
+    """System health check.
+    
+    Checks:
+    - Application running
+    - Database connection
+    - TODO: Redis connection
+    - TODO: OpenAI API
+    
+    Returns:
+        Health status dict
+    """
+    
+    checks = {
+        "status": "healthy",
+        "database": await check_database_health(),
+        "redis": "not_implemented",      # TODO
+        "openai_api": "not_implemented"  # TODO
+    }
+    
+    # Overall status
+    all_healthy = checks["database"] is True
+    
+    if all_healthy:
+        return {"status": "healthy", "checks": checks}
+    else:
+        return {"status": "degraded", "checks": checks}
+
+
+@router.get("/businesses", response_model=list[Business])
+async def list_businesses(
+    session: AsyncSession = Depends(get_session)
+) -> list[Business]:
+    """Get the 4 business contexts.
+    
+    Returns:
+        List of 4 businesses
+    """
+    
+    from src.infrastructure.database.models import BusinessORM
+    from sqlalchemy import select
+    
+    result = await session.execute(
+        select(BusinessORM).order_by(BusinessORM.id)
+    )
+    businesses_orm = result.scalars().all()
+    
+    return [Business.model_validate(b) for b in businesses_orm]
+
+
+@router.get("/members", response_model=list[Member])
+async def list_members(
+    business_id: int | None = None,
+    session: AsyncSession = Depends(get_session)
+) -> list[Member]:
+    """Get team members (8 people).
+    
+    Args:
+        business_id: Optional filter by business
+        
+    Returns:
+        List of members
+    """
+    
+    from src.infrastructure.database.models import MemberORM
+    from sqlalchemy import select
+    
+    query = select(MemberORM)
+    
+    # TODO: Filter by business_id if provided
+    # (Need to check if business_id in member.business_ids array)
+    
+    result = await session.execute(query.order_by(MemberORM.name))
+    members_orm = result.scalars().all()
+    
+    return [Member.model_validate(m) for m in members_orm]
+

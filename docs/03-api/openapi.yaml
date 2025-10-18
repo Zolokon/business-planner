@@ -1,0 +1,969 @@
+openapi: 3.0.3
+
+info:
+  title: Business Planner API
+  description: |
+    Voice-first task management system for 4 businesses via Telegram bot.
+    
+    **Key Features**:
+    - Voice-to-task creation with AI parsing (GPT-5 Nano)
+    - Self-learning time estimation (RAG)
+    - Business context isolation (4 separate contexts)
+    - Team member assignment (8 people)
+    
+    **Tech Stack**: FastAPI + LangGraph + PostgreSQL + GPT-5 Nano
+    
+    **Documentation**: See START_HERE.md and docs/ folder
+  version: 1.0.0
+  contact:
+    name: Константин
+    email: support@businessplanner.example.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://planner.yourdomain.com
+    description: Production (Digital Ocean Droplet)
+  - url: http://localhost:8000
+    description: Development
+
+tags:
+  - name: tasks
+    description: Task management operations
+  - name: projects
+    description: Project grouping operations
+  - name: analytics
+    description: Analytics and insights
+  - name: telegram
+    description: Telegram bot webhook
+  - name: system
+    description: System health and info
+
+# ============================================================================
+# PATHS
+# ============================================================================
+
+paths:
+  # --------------------------------------------------------------------------
+  # Tasks
+  # --------------------------------------------------------------------------
+  /tasks:
+    get:
+      summary: List tasks
+      description: Get list of tasks with optional filtering
+      tags: [tasks]
+      parameters:
+        - name: business_id
+          in: query
+          description: Filter by business context (1-4)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [open, done, archived]
+        - name: project_id
+          in: query
+          description: Filter by project
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    
+    post:
+      summary: Create task
+      description: Create new task (from voice or text input)
+      tags: [tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  
+  /tasks/{task_id}:
+    parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    
+    get:
+      summary: Get task by ID
+      description: Retrieve single task with all details
+      tags: [tasks]
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetailed'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    patch:
+      summary: Update task
+      description: Update task fields (partial update)
+      tags: [tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    
+    delete:
+      summary: Delete task
+      description: Delete task (soft delete to archived status)
+      tags: [tasks]
+      responses:
+        '204':
+          description: Task deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+  
+  /tasks/{task_id}/complete:
+    post:
+      summary: Complete task
+      description: Mark task as completed with actual duration
+      tags: [tasks]
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - actual_duration
+              properties:
+                actual_duration:
+                  type: integer
+                  description: Actual time spent in minutes
+                  minimum: 1
+                  maximum: 480
+      responses:
+        '200':
+          description: Task completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  
+  # --------------------------------------------------------------------------
+  # Projects
+  # --------------------------------------------------------------------------
+  /projects:
+    get:
+      summary: List projects
+      description: Get list of projects
+      tags: [projects]
+      parameters:
+        - name: business_id
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, on_hold, completed]
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+    
+    post:
+      summary: Create project
+      description: Create new project for task grouping
+      tags: [projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreate'
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+  
+  /projects/{project_id}:
+    get:
+      summary: Get project
+      tags: [projects]
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Project details with tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDetailed'
+  
+  # --------------------------------------------------------------------------
+  # Analytics
+  # --------------------------------------------------------------------------
+  /analytics/today:
+    get:
+      summary: Today's tasks
+      description: Get tasks for today grouped by business and priority
+      tags: [analytics]
+      parameters:
+        - name: business_id
+          in: query
+          description: Filter by specific business (optional)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4
+      responses:
+        '200':
+          description: Today's tasks grouped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodayTasks'
+  
+  /analytics/weekly:
+    get:
+      summary: Weekly analytics
+      description: Get weekly insights and productivity metrics (GPT-5)
+      tags: [analytics]
+      responses:
+        '200':
+          description: Weekly report with AI insights
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyReport'
+  
+  /analytics/business/{business_id}:
+    get:
+      summary: Business analytics
+      description: Analytics for specific business
+      tags: [analytics]
+      parameters:
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4
+        - name: days
+          in: query
+          description: Number of days to analyze
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Business analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessAnalytics'
+  
+  # --------------------------------------------------------------------------
+  # Telegram Webhook
+  # --------------------------------------------------------------------------
+  /webhook/telegram:
+    post:
+      summary: Telegram webhook
+      description: Receive updates from Telegram Bot API
+      tags: [telegram]
+      security:
+        - TelegramToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Telegram Update object
+      responses:
+        '200':
+          description: Update processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+        '403':
+          description: Invalid Telegram signature
+  
+  # --------------------------------------------------------------------------
+  # System
+  # --------------------------------------------------------------------------
+  /health:
+    get:
+      summary: Health check
+      description: Check system health (database, Redis, AI APIs)
+      tags: [system]
+      responses:
+        '200':
+          description: System healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: boolean
+                      redis:
+                        type: boolean
+                      openai_api:
+                        type: boolean
+        '503':
+          description: System unhealthy
+  
+  /businesses:
+    get:
+      summary: List businesses
+      description: Get the 4 business contexts
+      tags: [system]
+      responses:
+        '200':
+          description: List of businesses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Business'
+  
+  /members:
+    get:
+      summary: List team members
+      description: Get all 8 team members
+      tags: [system]
+      parameters:
+        - name: business_id
+          in: query
+          description: Filter by business
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of team members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+
+# ============================================================================
+# COMPONENTS
+# ============================================================================
+
+components:
+  # --------------------------------------------------------------------------
+  # Security Schemes
+  # --------------------------------------------------------------------------
+  securitySchemes:
+    TelegramToken:
+      type: apiKey
+      in: header
+      name: X-Telegram-Bot-Api-Secret-Token
+      description: Telegram webhook secret token
+  
+  # --------------------------------------------------------------------------
+  # Schemas
+  # --------------------------------------------------------------------------
+  schemas:
+    # Core Entities
+    Task:
+      type: object
+      required:
+        - id
+        - user_id
+        - business_id
+        - title
+        - status
+        - priority
+        - created_at
+      properties:
+        id:
+          type: integer
+          example: 123
+        user_id:
+          type: integer
+          example: 1
+        business_id:
+          type: integer
+          description: Business context (1-4) - MANDATORY
+          minimum: 1
+          maximum: 4
+          example: 1
+        project_id:
+          type: integer
+          nullable: true
+          example: 5
+        assigned_to:
+          type: integer
+          nullable: true
+          description: Member ID
+          example: 3
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: "Починить фрезер для Иванова"
+        description:
+          type: string
+          nullable: true
+          maxLength: 5000
+        status:
+          type: string
+          enum: [open, done, archived]
+          example: open
+        priority:
+          type: integer
+          description: "1=DO NOW, 2=SCHEDULE, 3=DELEGATE, 4=BACKLOG"
+          minimum: 1
+          maximum: 4
+          example: 1
+        estimated_duration:
+          type: integer
+          nullable: true
+          description: AI estimate in minutes
+          example: 120
+        actual_duration:
+          type: integer
+          nullable: true
+          description: Actual time spent (for learning)
+          example: 105
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-10-18T09:00:00+05:00"
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-10-17T15:30:00+05:00"
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+    
+    TaskDetailed:
+      allOf:
+        - $ref: '#/components/schemas/Task'
+        - type: object
+          properties:
+            business:
+              $ref: '#/components/schemas/Business'
+            project:
+              $ref: '#/components/schemas/Project'
+              nullable: true
+            assigned_member:
+              $ref: '#/components/schemas/Member'
+              nullable: true
+            estimation_accuracy:
+              type: number
+              format: float
+              nullable: true
+              description: How accurate was estimate (0-1)
+              example: 0.875
+    
+    TaskCreate:
+      type: object
+      required:
+        - title
+        - business_id
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: "Позвонить поставщику фрез"
+        description:
+          type: string
+          maxLength: 5000
+        business_id:
+          type: integer
+          description: Business context (1-4) - MANDATORY
+          minimum: 1
+          maximum: 4
+          example: 4
+        project_id:
+          type: integer
+          nullable: true
+        assigned_to:
+          type: integer
+          nullable: true
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 4
+          default: 2
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+        deadline_text:
+          type: string
+          description: Natural language deadline (AI will parse)
+          example: "завтра утром"
+        created_via:
+          type: string
+          enum: [voice, text, api]
+          default: api
+    
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, done, archived]
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 4
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+        assigned_to:
+          type: integer
+          nullable: true
+    
+    Project:
+      type: object
+      required:
+        - id
+        - user_id
+        - business_id
+        - name
+        - status
+      properties:
+        id:
+          type: integer
+          example: 5
+        user_id:
+          type: integer
+        business_id:
+          type: integer
+          minimum: 1
+          maximum: 4
+          example: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "Ремонт фрезера Иванова"
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, on_hold, completed]
+          example: active
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+    
+    ProjectDetailed:
+      allOf:
+        - $ref: '#/components/schemas/Project'
+        - type: object
+          properties:
+            tasks:
+              type: array
+              items:
+                $ref: '#/components/schemas/Task'
+            task_count:
+              type: integer
+            completed_task_count:
+              type: integer
+    
+    ProjectCreate:
+      type: object
+      required:
+        - name
+        - business_id
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        business_id:
+          type: integer
+          minimum: 1
+          maximum: 4
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+    
+    Business:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          maximum: 4
+          example: 1
+        name:
+          type: string
+          enum: [inventum, lab, r&d, trade]
+          example: inventum
+        display_name:
+          type: string
+          example: "Inventum"
+        description:
+          type: string
+        keywords:
+          type: array
+          items:
+            type: string
+          example: ["фрезер", "ремонт", "диагностика"]
+        color:
+          type: string
+          example: "#3498db"
+    
+    Member:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+        name:
+          type: string
+          example: "Дима"
+        role:
+          type: string
+          example: "Мастер"
+        business_ids:
+          type: array
+          items:
+            type: integer
+          description: Businesses this member works in
+          example: [1, 3]
+        skills:
+          type: array
+          items:
+            type: string
+          example: ["repairs", "technical", "diagnostics"]
+        is_cross_functional:
+          type: boolean
+          example: true
+    
+    # Analytics
+    TodayTasks:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2025-10-17"
+        by_business:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              business_name:
+                type: string
+              urgent:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+              scheduled:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+              total_time_minutes:
+                type: integer
+        total_tasks:
+          type: integer
+        total_time_minutes:
+          type: integer
+    
+    WeeklyReport:
+      type: object
+      properties:
+        week_start:
+          type: string
+          format: date
+        week_end:
+          type: string
+          format: date
+        summary:
+          type: object
+          properties:
+            total_tasks_completed:
+              type: integer
+            total_time_spent_minutes:
+              type: integer
+            by_business:
+              type: object
+              additionalProperties:
+                type: object
+                properties:
+                  tasks_completed:
+                    type: integer
+                  time_spent_minutes:
+                    type: integer
+        insights:
+          type: array
+          items:
+            type: string
+          description: AI-generated insights (GPT-5)
+          example: ["Наибольшая продуктивность во вторник", "R&D задачи занимают на 20% больше времени"]
+        recommendations:
+          type: array
+          items:
+            type: string
+          description: Strategic recommendations (GPT-5)
+          example: ["Рассмотреть делегирование задач Inventum", "Запланировать больше времени на R&D"]
+        estimation_accuracy:
+          type: object
+          properties:
+            overall:
+              type: number
+              format: float
+              description: Overall accuracy (0-1)
+              example: 0.75
+            by_business:
+              type: object
+              additionalProperties:
+                type: number
+                format: float
+    
+    BusinessAnalytics:
+      type: object
+      properties:
+        business_id:
+          type: integer
+        business_name:
+          type: string
+        period_days:
+          type: integer
+        tasks_completed:
+          type: integer
+        tasks_open:
+          type: integer
+        total_time_spent_minutes:
+          type: integer
+        average_task_duration_minutes:
+          type: number
+          format: float
+        estimation_accuracy:
+          type: number
+          format: float
+          description: Accuracy 0-1 (target: 0.8)
+        top_assignees:
+          type: array
+          items:
+            type: object
+            properties:
+              member_name:
+                type: string
+              task_count:
+                type: integer
+    
+    # Errors
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "ValidationError"
+        message:
+          type: string
+          example: "business_id is required"
+        details:
+          type: object
+          nullable: true
+    
+    ValidationError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "ValidationError"
+        message:
+          type: string
+        validation_errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+  
+  # --------------------------------------------------------------------------
+  # Responses
+  # --------------------------------------------------------------------------
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "NotFound"
+            message: "Task with id 999 not found"
+    
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+# ============================================================================
+# Example Requests/Responses
+# ============================================================================
+
+# Not in OpenAPI 3.0 spec, but for documentation:
+# 
+# Example: Create task from voice
+# POST /tasks
+# {
+#   "title": "Позвонить поставщику фрез",
+#   "business_id": 4,
+#   "deadline_text": "завтра утром",
+#   "created_via": "voice"
+# }
+#
+# Response 201:
+# {
+#   "id": 124,
+#   "title": "Позвонить поставщику фрез",
+#   "business_id": 4,
+#   "status": "open",
+#   "priority": 2,
+#   "estimated_duration": 45,
+#   "deadline": "2025-10-18T09:00:00+05:00",
+#   "created_at": "2025-10-17T15:30:00+05:00"
+# }
+

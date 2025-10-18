@@ -1,0 +1,567 @@
+# Business Planner - AI Coding Rules
+
+> Rules for AI-assisted development of Business Planner project
+> Project: Voice-first task manager for 4 businesses via Telegram bot
+> Stack: FastAPI + LangGraph + PostgreSQL + GPT-5 Nano + Digital Ocean
+
+---
+
+## 🎯 Project Context
+
+### Overview
+- **Type**: Voice-first Telegram bot for task management
+- **User**: Константин (CEO, 4 businesses, team of 8 people)
+- **Businesses**: Inventum, Inventum Lab, R&D, Import & Trade
+- **Critical**: Business context isolation - RAG search MUST filter by business_id
+- **Approach**: AI-First Development (specifications before code)
+
+### Tech Stack
+- **Backend**: FastAPI (Python 3.11+), async/await everywhere
+- **AI Orchestration**: LangGraph for all AI workflows
+- **Database**: PostgreSQL 15 + pgvector extension
+- **Cache**: Redis 7
+- **AI Models**: GPT-5 Nano (parsing), GPT-5 (analytics), Whisper (voice)
+- **Bot**: python-telegram-bot
+- **Deployment**: Digital Ocean Droplet ($6/month)
+
+---
+
+## 🐍 Python Style Rules
+
+### Code Formatting
+- **PEP 8 compliance** - strictly follow PEP 8
+- **Line length**: 100 characters (not 79)
+- **Formatter**: Black with line-length=100
+- **Import sorting**: isort with profile=black
+- **Quotes**: Double quotes for strings (Black default)
+
+### Type Hints
+- **MANDATORY** - All functions must have type hints
+- **mypy strict mode** - Code must pass mypy --strict
+- **Pydantic v2** - Use for all data models
+- **Optional typing**: Use `Optional[T]` or `T | None` (Python 3.10+ syntax preferred)
+
+```python
+# ✅ GOOD
+async def create_task(
+    title: str,
+    business_id: int,
+    user_id: int,
+    deadline: datetime | None = None
+) -> Task:
+    ...
+
+# ❌ BAD
+async def create_task(title, business_id, user_id, deadline=None):
+    ...
+```
+
+### Docstrings
+- **Google style** - Use Google docstring format
+- **Required for**: All public functions, classes, modules
+- **Include**: Description, Args, Returns, Raises, Examples (when helpful)
+
+```python
+# ✅ GOOD
+async def parse_voice_task(audio: bytes, user_context: UserContext) -> ParsedTask:
+    """Parse voice message into structured task using GPT-5 Nano.
+    
+    Args:
+        audio: Raw audio bytes from Telegram voice message
+        user_context: User context including business preferences and history
+        
+    Returns:
+        ParsedTask: Structured task with title, business, deadline, etc.
+        
+    Raises:
+        WhisperAPIError: If voice transcription fails
+        ParsingError: If GPT-5 Nano cannot parse the task
+        
+    Example:
+        >>> task = await parse_voice_task(audio_bytes, user_ctx)
+        >>> print(task.title)
+        "Позвонить поставщику фрез"
+    """
+    ...
+```
+
+---
+
+## 🏗️ Architecture Patterns
+
+### Domain-Driven Design (DDD)
+- **Layer separation**: API → Domain → Infrastructure
+- **Domain layer is core** - Business logic stays in domain
+- **No framework dependencies in domain** - Pure Python
+- **Aggregates** - Task, Project, Member are aggregates
+
+### Repository Pattern
+- **All database access through repositories**
+- **Abstract interface** - Define interface in domain layer
+- **Implementation in infrastructure** - SQLAlchemy in infrastructure layer
+
+```python
+# ✅ GOOD - Domain layer
+class TaskRepository(Protocol):
+    async def create(self, task: Task) -> Task: ...
+    async def get_by_id(self, task_id: int) -> Task | None: ...
+    async def find_by_business(self, business_id: int) -> list[Task]: ...
+
+# ✅ GOOD - Infrastructure layer
+class SQLAlchemyTaskRepository(TaskRepository):
+    async def create(self, task: Task) -> Task:
+        # SQLAlchemy implementation
+        ...
+```
+
+### LangGraph for AI Workflows
+- **ALL AI workflows use LangGraph** - No simple chains
+- **Stateful** - Use LangGraph state management
+- **Checkpoints** - Enable checkpointing for all graphs
+- **Error handling** - Implement retry logic in nodes
+
+```python
+# ✅ GOOD
+from langgraph.graph import StateGraph
+
+graph = StateGraph(VoiceTaskState)
+graph.add_node("transcribe", transcribe_node)
+graph.add_node("parse", parse_node)
+graph.add_node("estimate_time", estimate_time_node)
+graph.add_edge("transcribe", "parse")
+graph.add_edge("parse", "estimate_time")
+```
+
+### Dependency Injection
+- **FastAPI dependencies** - Use Depends() everywhere
+- **No global state** - Avoid module-level instances
+- **Testability** - Easy to mock dependencies
+
+```python
+# ✅ GOOD
+from fastapi import Depends
+
+async def create_task_endpoint(
+    task_data: TaskCreate,
+    repo: TaskRepository = Depends(get_task_repository),
+    ai_service: AIService = Depends(get_ai_service)
+) -> Task:
+    ...
+```
+
+### Async Everywhere
+- **All I/O is async** - Database, API calls, Redis, OpenAI
+- **asyncio** - Use asyncio primitives
+- **aiohttp** - For external HTTP calls
+- **asyncpg** - For PostgreSQL (via SQLAlchemy async)
+
+```python
+# ✅ GOOD
+async def process_voice_message(audio: bytes) -> Task:
+    transcript = await whisper_client.transcribe(audio)
+    parsed = await gpt_client.parse(transcript)
+    task = await task_repo.create(parsed)
+    return task
+```
+
+---
+
+## 📛 Naming Conventions
+
+### General
+- **Classes**: PascalCase - `TaskService`, `VoiceHandler`
+- **Functions/Variables**: snake_case - `create_task`, `user_id`
+- **Constants**: UPPER_SNAKE_CASE - `MAX_VOICE_LENGTH`, `DEFAULT_DEADLINE_DAYS`
+- **Private**: Leading underscore - `_internal_helper`, `_cache`
+- **Type Aliases**: PascalCase - `TaskID`, `BusinessContext`
+
+### Specific to Project
+- **Business contexts**: Lowercase strings - `"inventum"`, `"lab"`, `"r&d"`, `"trade"`
+- **Status values**: Lowercase - `"open"`, `"done"`, `"archived"`
+- **Priority values**: Integers 1-4 - `1` (DO NOW) to `4` (BACKLOG)
+
+### File/Module Names
+- **snake_case** - `task_service.py`, `voice_handler.py`
+- **No abbreviations** - Use full words for clarity
+- **Descriptive** - Name should indicate content
+
+```
+✅ GOOD
+src/domain/services/task_service.py
+src/ai/parsers/task_parser.py
+src/telegram/handlers/voice_handler.py
+
+❌ BAD
+src/domain/svc/tsk.py
+src/ai/prs/tp.py
+src/tg/hdl/vh.py
+```
+
+---
+
+## ✅ Testing Requirements
+
+### Framework
+- **pytest** - Use pytest, not unittest
+- **pytest-asyncio** - For async test support
+- **faker** - For generating test data
+- **freezegun** - For mocking datetime
+
+### Coverage
+- **Overall**: 80%+ code coverage required
+- **Domain logic**: 95%+ coverage required
+- **Critical paths**: 100% coverage (task creation, voice parsing)
+- **Infrastructure**: 70%+ coverage acceptable
+
+### Test Structure
+```
+tests/
+├── unit/              # Fast, isolated, no I/O
+│   ├── test_parsers.py
+│   ├── test_services.py
+│   └── test_rules.py
+├── integration/       # With real dependencies (DB, Redis)
+│   ├── test_api.py
+│   ├── test_database.py
+│   └── test_telegram.py
+└── e2e/              # Full workflows
+    └── test_voice_to_task.py
+```
+
+### Test Naming
+- **Descriptive** - test_should_create_task_when_voice_message_received
+- **Pattern**: test_should_[expected]_when_[condition]
+- **No test_1, test_2** - Always descriptive names
+
+```python
+# ✅ GOOD
+async def test_should_parse_business_context_from_keywords():
+    transcript = "Нужно починить фрезер для Иванова"
+    result = await parse_business(transcript)
+    assert result.business == "inventum"
+
+# ❌ BAD
+async def test_parse():
+    result = await parse("test")
+    assert result
+```
+
+### Fixtures
+- **conftest.py** - Shared fixtures
+- **Factory pattern** - Use factories for test data
+- **Realistic data** - Use realistic Russian text for tasks
+
+---
+
+## 📚 Documentation Standards
+
+### README Files
+- **Every major module** - Has its own README.md
+- **Purpose** - What this module does
+- **Usage** - How to use it
+- **Examples** - Code examples
+
+### Inline Comments
+- **Why, not what** - Explain reasoning, not obvious code
+- **Business logic** - Comment complex business rules
+- **TODO/FIXME** - Use with issue numbers
+
+```python
+# ✅ GOOD
+# RAG search MUST filter by business_id to maintain context isolation
+# This prevents "diagnostics" in Inventum from matching R&D diagnostics
+similar_tasks = await vector_search(
+    embedding=task_embedding,
+    filters={"business_id": task.business_id},
+    top_k=5
+)
+
+# ❌ BAD
+# Get similar tasks
+similar_tasks = await vector_search(task_embedding)
+```
+
+### API Documentation
+- **OpenAPI/Swagger** - Auto-generated from FastAPI
+- **Descriptions** - Add description to all endpoints
+- **Examples** - Provide request/response examples
+- **Status codes** - Document all possible status codes
+
+---
+
+## 🤖 AI Prompting Guidelines
+
+### Prompt Structure
+- **System message** - Always include system context
+- **User message** - Clear, specific instructions
+- **Examples** - Include few-shot examples
+- **Output format** - Specify exact JSON schema
+
+### Business Context
+- **ALWAYS include** - User's 4 businesses in prompts
+- **Keywords** - Provide business-specific keywords
+- **History** - Include recent task history (use 400K context of GPT-5 Nano)
+
+```python
+# ✅ GOOD
+prompt = f"""
+You are parsing a voice task for a business owner managing 4 companies:
+1. Inventum (dental repair) - keywords: фрезер, ремонт, диагностика, Иванов
+2. Inventum Lab (dental lab) - keywords: коронка, моделирование, CAD/CAM
+3. R&D (prototypes) - keywords: прототип, разработка, workshop
+4. Import & Trade (import) - keywords: поставщик, Китай, контракт, таможня
+
+Recent tasks for context:
+{recent_tasks_json}
+
+Voice transcript: "{transcript}"
+
+Extract:
+{json_schema}
+"""
+
+# ❌ BAD
+prompt = f"Parse this task: {transcript}"
+```
+
+### Error Handling
+- **Retry logic** - Implement exponential backoff
+- **Fallbacks** - Have fallback strategies
+- **Logging** - Log all AI API calls and responses
+
+### Cost Optimization
+- **GPT-5 Nano first** - Use for all parsing (cheap)
+- **GPT-5 only when needed** - For complex analytics
+- **Cache results** - Use Redis for repeated queries
+- **Batch when possible** - Batch embedding generation
+
+---
+
+## 📝 Logging Strategy
+
+### Framework
+- **structlog** - Use structured logging
+- **JSON format** - All logs in JSON for easy parsing
+- **Context** - Include request_id, user_id, business_id in all logs
+
+### Log Levels
+- **DEBUG**: Detailed info for debugging (disabled in production)
+- **INFO**: General information about flow
+- **WARNING**: Potentially problematic situations
+- **ERROR**: Errors that need attention
+- **CRITICAL**: System-critical errors
+
+### Debug Mode Toggle
+- **User preference**: Serial output only in debug mode [[memory:7583598]]
+- **Environment variable**: `DEBUG=true` enables verbose logging
+- **Production**: Minimal console output, JSON to files
+- **Development**: Colorful console output
+
+```python
+# ✅ GOOD
+import structlog
+
+logger = structlog.get_logger()
+
+async def create_task(task_data: TaskCreate) -> Task:
+    logger.info(
+        "creating_task",
+        title=task_data.title,
+        business=task_data.business,
+        user_id=task_data.user_id
+    )
+    # ... logic ...
+    logger.info("task_created", task_id=task.id)
+    return task
+```
+
+### No print() in Production
+- **Never use print()** - Use logger instead
+- **print() only for scripts** - CLI tools, migrations
+- **Structured logs** - Always use structured logging
+
+---
+
+## 🔒 Security & Best Practices
+
+### Environment Variables
+- **Never hardcode** - API keys, passwords, tokens
+- **python-decouple** - Use for env variable management
+- **.env.example** - Template without sensitive data
+- **Validation** - Validate all env vars on startup
+
+### Input Validation
+- **Pydantic models** - Validate all API inputs
+- **Sanitization** - Sanitize user inputs
+- **SQL injection** - Use SQLAlchemy ORM (parameterized queries)
+- **XSS protection** - Escape user-generated content
+
+### API Rate Limiting
+- **slowapi** - Rate limiting for FastAPI
+- **Per user** - Limit by user_id or telegram_id
+- **Graceful degradation** - Inform user when rate limited
+
+---
+
+## 🎨 Code Quality Tools
+
+### Required Tools
+```bash
+# Install
+pip install black isort mypy ruff pytest pytest-asyncio pytest-cov
+
+# Format code
+black src/ tests/ --line-length 100
+isort src/ tests/ --profile black
+
+# Type check
+mypy src/ --strict
+
+# Lint
+ruff check src/ tests/
+
+# Test
+pytest tests/ --cov=src --cov-report=html
+```
+
+### Pre-commit Hooks
+- **Setup**: Use pre-commit framework
+- **Hooks**: black, isort, mypy, ruff
+- **Run before commit** - Ensures code quality
+
+---
+
+## 📦 Dependencies Management
+
+### Requirements
+- **requirements.txt** - Pin exact versions for production
+- **requirements-dev.txt** - Development dependencies
+- **Keep updated** - Regular security updates
+
+### Version Pinning
+```
+# ✅ GOOD - Production
+fastapi==0.104.1
+sqlalchemy==2.0.23
+
+# ✅ GOOD - Development
+pytest>=7.4.0,<8.0.0
+```
+
+---
+
+## 🚀 Performance Guidelines
+
+### Database
+- **Indexes** - Add indexes for all foreign keys and common queries
+- **Select specific columns** - Don't use SELECT *
+- **Pagination** - Always paginate large result sets
+- **Connection pooling** - Use asyncpg connection pool
+
+### Caching
+- **Redis for hot data** - User sessions, recent tasks
+- **TTL strategy** - Set appropriate TTL for each cache type
+- **Cache invalidation** - Clear cache on updates
+
+### AI Calls
+- **Minimize calls** - Batch when possible
+- **Parallel when safe** - Use asyncio.gather for independent calls
+- **Timeout** - Set timeouts for all AI API calls
+
+---
+
+## 🔍 Code Review Checklist
+
+Before considering code "done":
+
+- [ ] Follows PEP 8 and Black formatting
+- [ ] Has complete type hints
+- [ ] Has Google-style docstrings
+- [ ] Includes tests (80%+ coverage)
+- [ ] Passes mypy --strict
+- [ ] Passes all tests
+- [ ] No print() statements (use logger)
+- [ ] Uses async/await correctly
+- [ ] Follows DDD architecture
+- [ ] Business context isolation maintained
+- [ ] Logging includes proper context
+- [ ] Error handling implemented
+- [ ] Input validation with Pydantic
+- [ ] No hardcoded secrets
+- [ ] Performance considered (indexes, caching)
+
+---
+
+## 🎯 Business-Specific Rules
+
+### Business Context Isolation
+- **CRITICAL**: RAG search MUST filter by business_id
+- **Reason**: "diagnostics" in Inventum ≠ "diagnostics" in R&D
+- **Embeddings**: Store business_id with every embedding
+- **Validation**: Assert business_id in all cross-business queries
+
+```python
+# ✅ GOOD
+async def find_similar_tasks(task: Task) -> list[Task]:
+    return await vector_search(
+        embedding=task.embedding,
+        filters={"business_id": task.business_id},  # CRITICAL!
+        top_k=5
+    )
+
+# ❌ BAD - Will contaminate across businesses!
+async def find_similar_tasks(task: Task) -> list[Task]:
+    return await vector_search(
+        embedding=task.embedding,
+        top_k=5
+    )
+```
+
+### Team Member Assignment
+- **8 people total** - See docs/TEAM.md for details
+- **Cross-business**: Константин (CEO), Лиза (Marketing)
+- **Cross-functional**: Максим, Дима (Inventum + R&D)
+- **Task assignment**: Context-aware suggestions based on business and task type
+
+### Deadline Parsing
+- **Workdays only** - Monday to Friday
+- **Weekend adjustment** - Saturday/Sunday → Monday
+- **Time defaults**: 
+  - "утром" → 09:00
+  - "днем" → 13:00
+  - "вечером" → 18:00
+- **Timezone**: Always UTC+5 (Almaty, Kazakhstan)
+
+---
+
+## 📖 Reference Documents
+
+When in doubt, check:
+- **START_HERE.md** - Quick project context
+- **planning/PROJECT_PLAN.md** - Master plan and phases
+- **docs/00-project-brief.md** - Complete project requirements
+- **docs/TEAM.md** - Team structure and assignment logic
+- **planning/SPEC_CHECKLIST.md** - What needs to be specified
+
+---
+
+## ✨ Remember
+
+> "AI-First Development: Complete specifications before writing code"
+
+- Specifications are in `docs/` and `planning/`
+- Follow this .cursorrules strictly
+- When generating code, ask for clarification if specification is unclear
+- Quality over speed - do it right the first time
+- Business context isolation is CRITICAL
+- User prefers debug mode toggle [[memory:7583598]]
+
+---
+
+**Project**: Business Planner  
+**Version**: 1.0  
+**Last Updated**: 2025-10-17  
+**For**: AI-assisted development with Cursor/Claude
+
+
+

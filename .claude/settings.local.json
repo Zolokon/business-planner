@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker --version)",
+      "Bash(findstr \"fastapi sqlalchemy openai langgraph\")",
+      "Bash(pip install -r requirements.txt)",
+      "Bash(dir infrastructuredocker)",
+      "Bash(docker-compose up -d)",
+      "Bash(python scripts/init_db.py)",
+      "Bash(timeout /t 5)",
+      "Bash(docker logs planner_postgres --tail 20)",
+      "Bash(pip install psycopg2-binary)",
+      "Bash(docker exec planner_postgres psql -U planner -d planner -c \"CREATE EXTENSION IF NOT EXISTS vector;\")",
+      "Bash(python simple_init.py)",
+      "Bash(docker exec planner_postgres psql -U planner -d planner -c \"\\dt\")",
+      "Bash(python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000)",
+      "Bash(timeout 5)",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(curl -s http://localhost:8000/businesses)",
+      "Bash(curl -s http://localhost:8000/members)",
+      "Bash(git init)",
+      "Bash(git add .)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
