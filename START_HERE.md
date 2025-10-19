@@ -66,25 +66,40 @@
 **ТЕКУЩИЙ СТАТУС:**
 - ✅ Код готов (108 файлов, 34,257 строк)
 - ✅ Git инициализирован, первый коммит сделан
-- ✅ Deployment файлы созданы (DEPLOY.md, Dockerfile, docker-compose.prod.yml)
-- ⏳ **СЛЕДУЮЩИЙ ШАГ: Создать GitHub репозиторий и задеплоить на Digital Ocean**
+- ✅ GitHub репозиторий создан: https://github.com/Zolokon/business-planner.git
+- ✅ Развернуто на Digital Ocean (164.92.225.137)
+- ✅ PostgreSQL + Redis в Docker контейнерах
+- ✅ База данных создана с правильной схемой (SQLAlchemy models)
+- ✅ Приложение запущено через systemd service (автоперезапуск)
+- ✅ Database health check исправлен
+- ✅ Nginx reverse proxy настроен
+- ✅ Firewall настроен (порты 80, 443 открыты)
+- ⏳ **СЛЕДУЮЩИЙ ШАГ: Обновить DNS → SSL → Telegram webhook**
 
-**Windows limitation:** asyncpg не работает стабильно с Docker на Windows
-**Решение:** Развернуть на Linux сервере (Digital Ocean)
+**Production Infrastructure:**
+- Сервер: Digital Ocean Droplet (164.92.225.137)
+- База: PostgreSQL 15 + pgvector extension
+- Кэш: Redis 7
+- Память: 1GB RAM + 2GB swap (решена проблема OOM)
+- Процесс: systemd service (автоперезапуск при падении)
+- Web-сервер: Nginx (reverse proxy настроен ✅)
+- SSL: Let's Encrypt Certbot (ожидает обновления DNS)
 
-**Оценка до production:** 2-3 часа (GitHub setup + deployment)
+**Домен:** inventum.com.kz (требуется изменить DNS: 89.35.125.17 → 164.92.225.137)
+
+**Оценка до полного production:** 10-15 минут (DNS update + SSL + webhook)
 
 ### 📊 Progress
 ```
 Phase 0: Specifications  [████████████████████████████] 100% ✅
 Phase 1: Core Development[████████████████████████████] 100% ✅
-Phase 2: Git Setup       [██████████████..............] 60% ⏳
-Phase 3: Deployment      [............................] 0%
+Phase 2: Git Setup       [████████████████████████████] 100% ✅
+Phase 3: Deployment      [████████████████████........] 85% ⏳
 Phase 4: Testing         [............................] 0%
 Phase 5: Analytics       [............................] 0%
 ```
 
-**Current Task:** Push code to GitHub → Deploy to Digital Ocean
+**Current Task:** Update DNS → Get SSL certificate → Setup Telegram webhook
 
 ---
 
@@ -381,37 +396,51 @@ Telegram Response (confirmation)
 
 ## 🎬 How to Continue
 
-### For Next AI Session - DEPLOYMENT READY! 🚀
+### For Next AI Session - PRODUCTION INFRASTRUCTURE SETUP! 🚀
 
 **Current Status:**
-- ✅ Phase 1 MVP полностью готов (100%)
-- ✅ Git репозиторий инициализирован
-- ✅ Первый коммит сделан (108 файлов)
-- ⏳ Нужно: создать GitHub repo → задеплоить на Digital Ocean
+- ✅ Phase 1 MVP полностью готов и развернут (100%)
+- ✅ Git репозиторий: https://github.com/Zolokon/business-planner.git
+- ✅ Digital Ocean сервер: 164.92.225.137
+- ✅ База данных работает (PostgreSQL + pgvector)
+- ✅ Приложение работает через systemd service
+- ✅ Nginx + Certbot установлены
+- ⏳ Нужно: Настроить HTTPS для Telegram webhook
 
 **Next Steps:**
 
-1. **Создать GitHub репозиторий** ← 2 min
+1. **Обновить DNS для домена inventum.com.kz** ← КРИТИЧНО!
+   - Текущий IP: 89.35.125.17
+   - Новый IP: 164.92.225.137
+   - A-запись должна указывать на новый сервер
+   - Ожидание DNS propagation: 5-30 минут
+
+2. **Настроить Nginx reverse proxy** ← 5 min
    ```bash
-   # Через веб: https://github.com/new
-   # Или через CLI: gh repo create business-planner --private
+   # Создать конфиг /etc/nginx/sites-available/business-planner
+   # Проксировать на localhost:8000
+   # Включить сайт
    ```
 
-2. **Push код в GitHub** ← 1 min
+3. **Получить SSL сертификат** ← 2 min
    ```bash
-   git remote add origin https://github.com/YOUR_USERNAME/business-planner.git
-   git branch -M main
-   git push -u origin main
+   certbot --nginx -d inventum.com.kz
    ```
 
-3. **Развернуть на Digital Ocean** ← 30-60 min
-   - Следовать инструкциям в [DEPLOY.md](DEPLOY.md)
-   - Создать Droplet ($6/month)
-   - Клонировать репозиторий
-   - Настроить .env с API ключами
-   - Запустить docker-compose
+4. **Настроить Telegram webhook** ← 2 min
+   ```bash
+   curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
+     -d "url=https://inventum.com.kz/webhook/telegram"
+   ```
 
-**Total time**: ~1 час до рабочего приложения на сервере
+**Total time**: ~30-60 минут (включая ожидание DNS)
+
+**Важные детали:**
+- Systemd service: `/etc/systemd/system/business-planner.service`
+- Логи приложения: `/root/business-planner/app.log`
+- Systemd логи: `journalctl -u business-planner -f`
+- Статус сервиса: `systemctl status business-planner`
+- Health check: `curl http://localhost:8000/health`
 
 ### Commands to Explore
 ```bash
@@ -519,17 +548,30 @@ Before starting work, confirm:
 
 ---
 
-## 🚀 READY TO DEPLOY!
+## 🚀 DEPLOYED AND RUNNING!
 
-**Next Session Action Plan:**
-1. Read [DEPLOY.md](DEPLOY.md) - Complete deployment guide
-2. Create GitHub repository
-3. Push code: `git push origin main`
-4. SSH to Digital Ocean droplet
-5. Clone repo and run `docker-compose up -d`
-6. Test Telegram bot in production!
+**Production Status:**
+1. ✅ GitHub repository: https://github.com/Zolokon/business-planner.git
+2. ✅ Code pushed to main branch
+3. ✅ Digital Ocean server: 164.92.225.137
+4. ✅ PostgreSQL + Redis running in Docker
+5. ✅ Application running via systemd service
+6. ✅ Database schema created (6 tables)
+7. ⏳ Nginx + SSL setup in progress
 
-**Важно:** На Linux сервере asyncpg работает без проблем, все будет работать идеально.
+**Решенные проблемы:**
+- ✅ OOM kills → создан 2GB swap file (1GB RAM + 2GB swap = 3GB total)
+- ✅ Database connection → исправлен DATABASE_URL (@postgres → @localhost)
+- ✅ Database schema mismatch → пересоздана схема через SQLAlchemy models
+- ✅ Database initialization skipped → раскомментирован `await init_database()`
+- ✅ Manual startup → создан systemd service для автоперезапуска
+- ✅ asyncpg на Linux → работает идеально (проблема была только на Windows)
+
+**Осталось:**
+- ⏳ DNS: изменить A-запись inventum.com.kz (89.35.125.17 → 164.92.225.137)
+- ⏳ Nginx: настроить reverse proxy
+- ⏳ SSL: получить сертификат Let's Encrypt
+- ⏳ Telegram: настроить webhook с HTTPS
 
 ---
 
@@ -542,7 +584,9 @@ Before starting work, confirm:
 
 ---
 
-**Status:** 🟢 Ready for Production Deployment
-**Estimated Time to Live:** 1 hour
-**Cost:** $9-12/month
+**Status:** 🟢 Deployed and Running on Production Server!
+**Server:** 164.92.225.137 (Digital Ocean)
+**Uptime:** Managed by systemd (auto-restart on failure)
+**Cost:** $9-12/month ($6 droplet + $3-5 AI APIs)
+**Next:** Configure HTTPS + Telegram webhook (30-60 min)
 
