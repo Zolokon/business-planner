@@ -19,7 +19,9 @@
       "Bash(curl -s http://localhost:8000/businesses)",
       "Bash(curl -s http://localhost:8000/members)",
       "Bash(git init)",
-      "Bash(git add .)"
+      "Bash(git add .)",
+      "Bash(git commit -m \"Initial commit: Business Planner MVP - Phase 1 complete\n\n- Complete FastAPI backend with async PostgreSQL\n- LangGraph workflow for voice-to-task processing\n- Telegram bot with 7 commands\n- RAG system with pgvector for task estimation\n- Complete domain models and infrastructure\n- Docker setup for deployment\n- Comprehensive documentation\n\nTech stack: FastAPI, PostgreSQL, pgvector, LangGraph, OpenAI (GPT-4o-mini, Whisper)\nCost optimized: ~$9-12/month on Digital Ocean\n\nReady for deployment to Linux server (asyncpg requires Linux for production use)\")",
+      "Bash(git commit -m \"Update START_HERE.md and local settings\")"
     ],
     "deny": [],
     "ask": []
