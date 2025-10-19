@@ -118,13 +118,13 @@ async def close_database() -> None:
 
 async def check_database_health() -> bool:
     """Check if database is accessible.
-    
+
     Returns:
         True if database is healthy
     """
     try:
         async with engine.connect() as conn:
-            await conn.execute("SELECT 1")
+            await conn.execute(text("SELECT 1"))
         return True
     except Exception as e:
         logger.error("database_health_check_failed", error=str(e))
