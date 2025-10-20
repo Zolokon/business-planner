@@ -127,12 +127,13 @@ class OpenAIClient:
         
         try:
             response = await self.client.chat.completions.create(
-                model=settings.model_parser,  # "gpt-5-nano"
+                model=settings.model_parser,  # "gpt-4o-mini"
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
                 response_format={"type": "json_object"},
+                temperature=0.1,  # Low for consistency (GPT-4o supports it)
                 max_completion_tokens=500
             )
             
@@ -192,7 +193,7 @@ class OpenAIClient:
         
         try:
             response = await self.client.chat.completions.create(
-                model=settings.model_reasoning,  # "gpt-5-nano"
+                model=settings.model_reasoning,  # "gpt-4o-mini"
                 messages=[
                     {
                         "role": "system",
@@ -200,6 +201,7 @@ class OpenAIClient:
                     },
                     {"role": "user", "content": context}
                 ],
+                temperature=0.3,  # Slightly higher than parsing (GPT-4o supports it)
                 max_completion_tokens=10  # Just a number!
             )
             
