@@ -161,10 +161,10 @@ async def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                     mins = task.estimated_duration % 60
                     time_str = f"{hours}ч {mins}м" if hours > 0 else f"{mins}м"
                     message += f"   ⏱️ ~{time_str}"
-                
-                if task.member_id:
-                    message += f" | 👤 {task.member_id}"  # TODO: Show member name
-                
+
+                if task.assigned_to:
+                    message += f" | 👤 {task.assigned_to}"  # TODO: Show member name
+
                 message += "\n"
             
             message += "\n"
