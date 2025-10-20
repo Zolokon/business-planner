@@ -14,7 +14,7 @@ from telegram.ext import ContextTypes
 from src.utils.logger import logger
 from src.infrastructure.database import get_session
 from src.infrastructure.database.repositories.task_repository import TaskRepository
-from src.domain.models.enums import Status
+from src.domain.models.enums import TaskStatus
 
 
 # ============================================================================
