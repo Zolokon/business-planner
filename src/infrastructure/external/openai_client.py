@@ -134,7 +134,7 @@ class OpenAIClient:
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.1,  # Low for consistency
-                max_tokens=500
+                max_completion_tokens=500
             )
             
             duration_ms = int((time.time() - start_time) * 1000)
@@ -200,7 +200,7 @@ class OpenAIClient:
                     {"role": "user", "content": context}
                 ],
                 temperature=0.3,  # Slightly higher than parsing
-                max_tokens=10  # Just a number!
+                max_completion_tokens=10  # Just a number!
             )
             
             # Parse duration from response
