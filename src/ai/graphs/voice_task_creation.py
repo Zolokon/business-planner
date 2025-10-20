@@ -294,7 +294,7 @@ async def format_response_node(
 
     Reference: docs/05-ai-specifications/langgraph-flows.md (Node 7)
     """
-    
+
     # If error, format error message
     if state.get("error"):
         error_messages = {
@@ -302,22 +302,25 @@ async def format_response_node(
             "ParsingFailed": "❌ Не удалось понять задачу. Уточните, пожалуйста.",
             "TaskCreationFailed": "❌ Ошибка при создании задачи. Попробуйте позже."
         }
-        
+
         message = error_messages.get(
             state["error"],
             f"❌ Произошла ошибка: {state.get('error_message', 'Неизвестная ошибка')}"
         )
-        
+
         return {**state, "telegram_response": message}
-    
-    # Success message
+
+    # Success message - get business name from database
     business_emoji = {1: "🔧", 2: "🦷", 3: "🔬", 4: "💼"}
-    
+    business_names = {1: "Inventum", 2: "Inventum Lab", 3: "R&D", 4: "Trade"}
+
+    business_name = business_names.get(state['parsed_business_id'], f"Business {state['parsed_business_id']}")
+
     message = f"""✅ Создал задачу:
 
 {state['parsed_title']}
 
-{business_emoji.get(state['parsed_business_id'], '📋')} Бизнес: Business {state['parsed_business_id']}
+{business_emoji.get(state['parsed_business_id'], '📋')} Бизнес: {business_name}
 """
     
     if state.get("parsed_assigned_to"):
