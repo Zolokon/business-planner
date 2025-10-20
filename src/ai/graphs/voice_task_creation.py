@@ -335,13 +335,32 @@ async def format_response_node(
     business_name = business_names.get(state['parsed_business_id'], f"Business {state['parsed_business_id']}")
     priority_name = priority_names.get(state.get('parsed_priority', 2), "СРЕДНИЙ")
 
+    # Get transcript (what user said)
+    transcript = state.get('transcript', '')
+
+    logger.info(
+        "format_response_transcript_check",
+        transcript_exists=bool(transcript),
+        transcript_length=len(transcript) if transcript else 0,
+        transcript_preview=transcript[:50] if transcript else None
+    )
+
     # Start with transcript (what user said)
-    message = f"""ВЫ СКАЗАЛИ:
-"{state.get('transcript', '...')}"
+    if transcript:
+        message = f"""ВЫ СКАЗАЛИ:
+"{transcript}"
 
 ---
 
 ЗАДАЧА СОЗДАНА
+
+{state['parsed_title']}
+
+Бизнес:    {business_name}
+Приоритет: {priority_name}"""
+    else:
+        # Fallback if no transcript available
+        message = f"""ЗАДАЧА СОЗДАНА
 
 {state['parsed_title']}
 
