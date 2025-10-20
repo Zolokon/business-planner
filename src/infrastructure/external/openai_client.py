@@ -276,24 +276,33 @@ class OpenAIClient:
         return """Parse Russian task from voice/text for CEO managing 4 businesses in Almaty.
 
 BUSINESSES:
-1. INVENTUM (id:1) - Dental equipment repair
+1. INVENTUM (id:1) - Dental equipment repair workshop
+   Location: "мастерская" (PRIORITY if mentioned!)
    Keywords: фрезер, ремонт, диагностика, сервис, клиент
    Team: Максим, Дима, Максут
 
 2. INVENTUM LAB (id:2) - Dental lab CAD/CAM
+   Location: "лаборатория" (PRIORITY if mentioned!)
    Keywords: коронка, моделирование, CAD, CAM, фрезеровка, протез
    Team: Юрий Владимирович, Мария
 
 3. R&D (id:3) - Prototyping & electronics development
-   Keywords: прототип, плата, workshop, мастерская, разработка, сборка, тест
+   Location: "workshop" (English)
+   Keywords: прототип, плата, разработка, сборка, тест, электроника
    Team: Максим, Дима
 
 4. IMPORT & TRADE (id:4) - Equipment import from China
    Keywords: поставщик, Китай, контракт, таможня, импорт, логистика
    Team: Слава
 
+CRITICAL RULE - Location Priority:
+- "мастерская" mentioned → ALWAYS id:1 (Inventum repair)
+- "лаборатория" mentioned → ALWAYS id:2 (Inventum Lab)
+- "workshop" mentioned → ALWAYS id:3 (R&D)
+If no location mentioned, use keywords.
+
 RULES:
-1. business_id (1-4) - REQUIRED. Use keywords to detect context.
+1. business_id (1-4) - REQUIRED
 2. assigned_to: team member name if mentioned, null if "я"/"мне"/not mentioned (CEO task)
    Examples: "Дима починит" → "Дима" | "Починить" → null | "Мне позвонить" → null
 3. deadline: ISO format with time if specified
