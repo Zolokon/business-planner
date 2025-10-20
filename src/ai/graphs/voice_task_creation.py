@@ -257,11 +257,19 @@ async def create_task_db_node(
             deadline_text = None
             if state.get("parsed_deadline"):
                 try:
-                    # Parse date string (e.g. "2025-10-20")
-                    deadline_date = datetime.fromisoformat(state["parsed_deadline"])
-                    # Set time to end of day
-                    deadline = deadline_date.replace(hour=23, minute=59, second=59)
-                    deadline_text = deadline_date.strftime("%d.%m.%Y")
+                    # Parse ISO datetime string (e.g. "2025-10-20T10:00:00" or "2025-10-20")
+                    deadline = datetime.fromisoformat(state["parsed_deadline"])
+
+                    # If no time specified (midnight), set to end of day
+                    if deadline.hour == 0 and deadline.minute == 0 and deadline.second == 0:
+                        deadline = deadline.replace(hour=23, minute=59, second=59)
+
+                    # Format for display
+                    if deadline.hour == 23 and deadline.minute == 59:
+                        deadline_text = deadline.strftime("%d.%m.%Y")
+                    else:
+                        deadline_text = deadline.strftime("%d.%m.%Y в %H:%M")
+
                 except (ValueError, TypeError) as e:
                     logger.warning("deadline_parse_failed", deadline=state.get("parsed_deadline"), error=str(e))
 
@@ -284,12 +292,15 @@ async def create_task_db_node(
             logger.info(
                 "node_create_task_complete",
                 task_id=task.id,
-                business_id=task.business_id
+                business_id=task.business_id,
+                deadline=deadline
             )
 
+            # IMPORTANT: Keep parsed_deadline in state for format_response_node
             return {
                 **state,
                 "created_task_id": task.id
+                # parsed_deadline already in state, don't remove it
             }
         finally:
             await session.close()
