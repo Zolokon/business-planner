@@ -11,9 +11,11 @@ Reference:
 
 from telegram import Update
 from telegram.ext import ContextTypes
+from sqlalchemy import select
 
 from src.utils.logger import logger
 from src.infrastructure.database import get_session
+from src.infrastructure.database.models import UserORM
 from src.ai.graphs.voice_task_creation import process_voice_message
 
 
@@ -72,15 +74,42 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
             user_id=user.id,
             size_bytes=len(voice_bytes)
         )
-        
-        # Process through LangGraph workflow
+
+        # Get database session
         session_gen = get_session()
         session = await anext(session_gen)
         try:
+            # Look up database user ID from Telegram ID
+            stmt = select(UserORM).where(UserORM.telegram_id == user.id)
+            result_db = await session.execute(stmt)
+            db_user = result_db.scalar_one_or_none()
+
+            if not db_user:
+                # User not found in database
+                logger.error(
+                    "user_not_found_in_database",
+                    telegram_id=user.id,
+                    username=user.username
+                )
+                await update.message.reply_text(
+                    "❌ Пользователь не найден в базе данных.\n"
+                    "Пожалуйста, отправьте команду /start для регистрации."
+                )
+                return
+
+            db_user_id = db_user.id
+
+            logger.info(
+                "user_mapped",
+                telegram_id=user.id,
+                db_user_id=db_user_id
+            )
+
+            # Process through LangGraph workflow
             result = await process_voice_message(
                 audio_bytes=bytes(voice_bytes),
                 audio_duration=voice.duration,
-                user_id=user.id,  # TODO: Map Telegram user to DB user
+                user_id=db_user_id,  # Use database user ID
                 telegram_chat_id=chat_id,
                 session=session
             )
