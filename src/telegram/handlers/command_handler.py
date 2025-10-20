@@ -10,9 +10,11 @@ Reference: docs/03-api/telegram-commands.md
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
+from sqlalchemy import select
 
 from src.utils.logger import logger
 from src.infrastructure.database import get_session
+from src.infrastructure.database.models import UserORM
 from src.infrastructure.database.repositories.task_repository import TaskRepository
 from src.domain.models.enums import TaskStatus
 
@@ -92,20 +94,39 @@ async def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     user = update.effective_user
     
     logger.info("command_today", user_id=user.id)
-    
+
     await update.message.reply_chat_action("typing")
-    
+
     try:
-        async with get_session() as session:
+        # Get database session
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
+            # Map Telegram user to DB user
+            stmt = select(UserORM).where(UserORM.telegram_id == user.id)
+            result_db = await session.execute(stmt)
+            db_user = result_db.scalar_one_or_none()
+
+            if not db_user:
+                await update.message.reply_text(
+                    "❌ Пользователь не найден в базе данных.\n"
+                    "Пожалуйста, отправьте команду /start для регистрации."
+                )
+                return
+
+            db_user_id = db_user.id
+
             repo = TaskRepository(session)
-            
+
             # Get today's tasks (deadline = today)
             today = datetime.now().date()
             tasks = await repo.find_by_deadline(
-                user_id=user.id,  # TODO: Map Telegram user to DB user
+                user_id=db_user_id,
                 date=today
             )
-        
+        finally:
+            await session.close()
+
         if not tasks:
             await update.message.reply_text(
                 "✅ На сегодня задач нет!\n\n"
@@ -183,23 +204,42 @@ async def week_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     user = update.effective_user
     
     logger.info("command_week", user_id=user.id)
-    
+
     await update.message.reply_chat_action("typing")
-    
+
     try:
-        async with get_session() as session:
+        # Get database session
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
+            # Map Telegram user to DB user
+            stmt = select(UserORM).where(UserORM.telegram_id == user.id)
+            result_db = await session.execute(stmt)
+            db_user = result_db.scalar_one_or_none()
+
+            if not db_user:
+                await update.message.reply_text(
+                    "❌ Пользователь не найден в базе данных.\n"
+                    "Пожалуйста, отправьте команду /start для регистрации."
+                )
+                return
+
+            db_user_id = db_user.id
+
             repo = TaskRepository(session)
-            
+
             # Get this week's tasks
             today = datetime.now().date()
             week_end = today + timedelta(days=7)
-            
+
             tasks = await repo.find_by_date_range(
-                user_id=user.id,
+                user_id=db_user_id,
                 start_date=today,
                 end_date=week_end
             )
-        
+        finally:
+            await session.close()
+
         if not tasks:
             await update.message.reply_text(
                 "✅ На эту неделю задач нет!\n\n"
@@ -286,25 +326,47 @@ async def task_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         from src.ai.parsers.task_parser import parse_task_from_transcript
         from src.infrastructure.database.repositories.task_repository import TaskRepository
         
-        # Parse text
-        parsed = await parse_task_from_transcript(
-            transcript=task_text,
-            user_id=user.id
-        )
-        
-        # Create task
-        async with get_session() as session:
+        # Get database session and map user
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
+            # Map Telegram user to DB user
+            stmt = select(UserORM).where(UserORM.telegram_id == user.id)
+            result_db = await session.execute(stmt)
+            db_user = result_db.scalar_one_or_none()
+
+            if not db_user:
+                await update.message.reply_text(
+                    "❌ Пользователь не найден в базе данных.\n"
+                    "Пожалуйста, отправьте команду /start для регистрации."
+                )
+                return
+
+            db_user_id = db_user.id
+
+            # Parse text
+            parsed = await parse_task_from_transcript(
+                transcript=task_text,
+                user_id=db_user_id
+            )
+
+            # Create task
             repo = TaskRepository(session)
-            task = await repo.create(parsed, user_id=user.id)
+            task = await repo.create(parsed, user_id=db_user_id)
+        finally:
+            await session.close()
         
         # Format response
         business_emoji = {1: "🔧", 2: "🦷", 3: "🔬", 4: "💼"}
-        
+        business_names = {1: "Inventum", 2: "Inventum Lab", 3: "R&D", 4: "Trade"}
+
+        business_name = business_names.get(task.business_id, f"Business {task.business_id}")
+
         response = f"""✅ Задача создана!
 
 {task.title}
 
-{business_emoji.get(task.business_id, '📋')} Бизнес: Business {task.business_id}
+{business_emoji.get(task.business_id, '📋')} Бизнес: {business_name}
 """
         
         if task.deadline:
@@ -370,25 +432,30 @@ async def complete_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         return
     
     await update.message.reply_chat_action("typing")
-    
+
     try:
-        async with get_session() as session:
+        # Get database session
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
             repo = TaskRepository(session)
-            
+
             # Get task
             task = await repo.get_by_id(task_id)
-            
+
             if not task:
                 await update.message.reply_text(f"❌ Задача #{task_id} не найдена")
                 return
-            
+
             # TODO: Check if user owns this task
-            
+
             # Complete task (prompt for actual duration)
             # For now, use estimated duration as actual
             actual_duration = task.estimated_duration or 60
-            
+
             completed_task = await repo.complete(task_id, actual_duration)
+        finally:
+            await session.close()
         
         await update.message.reply_text(
             f"✅ Задача завершена!\n\n"
