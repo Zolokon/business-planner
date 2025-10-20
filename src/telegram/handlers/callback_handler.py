@@ -130,30 +130,34 @@ async def handle_complete_callback(
     user = query.from_user
     
     logger.info("callback_complete_task", user_id=user.id, task_id=task_id)
-    
+
     try:
-        async with get_session() as session:
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
             repo = TaskRepository(session)
-            
+
             # Get task
             task = await repo.get_by_id(task_id)
-            
+
             if not task:
-                await query.edit_message_text(f"❌ Задача #{task_id} не найдена")
+                await query.edit_message_text(f"[ОШИБКА] Задача #{task_id} не найдена")
                 return
-            
+
             # TODO: Prompt for actual duration
             # For now, use estimated as actual
             actual_duration = task.estimated_duration or 60
-            
+
             # Complete task
             completed_task = await repo.complete(task_id, actual_duration)
-        
+        finally:
+            await session.close()
+
         # Update message
         await query.edit_message_text(
-            f"✅ **Задача завершена!**\n\n"
+            f"ЗАДАЧА ЗАВЕРШЕНА\n\n"
             f"{completed_task.title}\n\n"
-            f"🎉 Отличная работа!"
+            f"Отличная работа!"
         )
         
         logger.info("task_completed_via_button", user_id=user.id, task_id=task_id)
@@ -184,40 +188,44 @@ async def handle_edit_callback(
 
     # Get task details
     try:
-        async with get_session() as session:
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
             repo = TaskRepository(session)
             task = await repo.get_by_id(task_id)
 
             if not task:
-                await query.edit_message_text(f"❌ Задача #{task_id} не найдена")
+                await query.edit_message_text(f"[ОШИБКА] Задача #{task_id} не найдена")
                 return
+        finally:
+            await session.close()
 
-        # Show edit menu
+        # Show edit menu - clean formatting
         business_names = {1: "Inventum", 2: "Inventum Lab", 3: "R&D", 4: "Trade"}
-        priority_names = {1: "🔴 Высокий", 2: "🟡 Средний", 3: "🟢 Низкий", 4: "⚪ Нет срочности"}
+        priority_names = {1: "ВЫСОКИЙ", 2: "СРЕДНИЙ", 3: "НИЗКИЙ", 4: "ОТЛОЖЕННЫЙ"}
 
         business_name = business_names.get(task.business_id, f"Business {task.business_id}")
         priority_name = priority_names.get(task.priority, "Не указан")
         deadline_text = task.deadline.strftime("%d.%m.%Y") if task.deadline else "Не установлен"
 
-        message = f"""✏️ **Редактирование задачи #{task_id}**
+        message = f"""РЕДАКТИРОВАНИЕ ЗАДАЧИ #{task_id}
 
-📝 **{task.title}**
+{task.title}
 
-🦷 Бизнес: {business_name}
-🎯 Приоритет: {priority_name}
-📅 Дедлайн: {deadline_text}
+Бизнес:    {business_name}
+Приоритет: {priority_name}
+Дедлайн:   {deadline_text}
 
 Что хотите изменить?"""
 
         keyboard = [
             [
-                InlineKeyboardButton("📝 Название", callback_data=f"edit_title:{task_id}"),
-                InlineKeyboardButton("🎯 Приоритет", callback_data=f"edit_priority:{task_id}")
+                InlineKeyboardButton("Название", callback_data=f"edit_title:{task_id}"),
+                InlineKeyboardButton("Приоритет", callback_data=f"edit_priority:{task_id}")
             ],
             [
-                InlineKeyboardButton("📅 Дедлайн", callback_data=f"edit_deadline:{task_id}"),
-                InlineKeyboardButton("❌ Отмена", callback_data=f"edit_cancel:{task_id}")
+                InlineKeyboardButton("Дедлайн", callback_data=f"edit_deadline:{task_id}"),
+                InlineKeyboardButton("Отмена", callback_data=f"edit_cancel:{task_id}")
             ]
         ]
 
@@ -226,7 +234,7 @@ async def handle_edit_callback(
 
     except Exception as e:
         logger.error("callback_edit_failed", task_id=task_id, error=str(e))
-        await query.edit_message_text("❌ Ошибка при загрузке задачи")
+        await query.edit_message_text("[ОШИБКА] Ошибка при загрузке задачи")
 
 
 async def handle_edit_title_callback(
@@ -358,25 +366,29 @@ async def handle_set_priority_callback(
     # Parse param: "priority:task_id"
     parts = param.split(":")
     if len(parts) != 2:
-        await query.edit_message_text("❌ Ошибка формата данных")
+        await query.edit_message_text("[ОШИБКА] Ошибка формата данных")
         return
 
     priority = int(parts[0])
     task_id = int(parts[1])
 
     try:
-        async with get_session() as session:
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
             repo = TaskRepository(session)
 
             # Update priority
             task_update = TaskUpdate(priority=priority)
             updated_task = await repo.update(task_id, task_update)
+        finally:
+            await session.close()
 
-        priority_names = {1: "🔴 Высокий", 2: "🟡 Средний", 3: "🟢 Низкий", 4: "⚪ Нет срочности"}
+        priority_names = {1: "ВЫСОКИЙ", 2: "СРЕДНИЙ", 3: "НИЗКИЙ", 4: "ОТЛОЖЕННЫЙ"}
         priority_name = priority_names.get(priority, "Неизвестно")
 
         await query.edit_message_text(
-            f"✅ **Приоритет обновлен!**\n\n"
+            f"ПРИОРИТЕТ ОБНОВЛЕН\n\n"
             f"Задача: {updated_task.title}\n"
             f"Новый приоритет: {priority_name}"
         )
@@ -407,7 +419,7 @@ async def handle_set_deadline_callback(
     # Parse param: "date:task_id"
     parts = param.split(":")
     if len(parts) != 2:
-        await query.edit_message_text("❌ Ошибка формата данных")
+        await query.edit_message_text("[ОШИБКА] Ошибка формата данных")
         return
 
     date_str = parts[0]
@@ -419,19 +431,23 @@ async def handle_set_deadline_callback(
         # Set time to end of day
         deadline = deadline_date.replace(hour=23, minute=59, second=59)
 
-        async with get_session() as session:
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
             repo = TaskRepository(session)
 
             # Update deadline
             task_update = TaskUpdate(deadline=deadline)
             updated_task = await repo.update(task_id, task_update)
+        finally:
+            await session.close()
 
         deadline_text = deadline.strftime("%d.%m.%Y")
 
         await query.edit_message_text(
-            f"✅ **Дедлайн обновлен!**\n\n"
+            f"ДЕДЛАЙН ОБНОВЛЕН\n\n"
             f"Задача: {updated_task.title}\n"
-            f"Новый дедлайн: 📅 {deadline_text}"
+            f"Новый дедлайн: {deadline_text}"
         )
 
         logger.info("task_deadline_updated", task_id=task_id, deadline=deadline_text)
@@ -476,16 +492,20 @@ async def handle_delete_callback(
     user = query.from_user
     
     logger.info("callback_delete_task", user_id=user.id, task_id=task_id)
-    
+
     try:
-        async with get_session() as session:
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
             repo = TaskRepository(session)
-            
+
             # Soft delete (archive)
             await repo.delete(task_id)
-        
+        finally:
+            await session.close()
+
         await query.edit_message_text(
-            f"🗑️ Задача #{task_id} удалена"
+            f"ЗАДАЧА #{task_id} УДАЛЕНА"
         )
         
         logger.info("task_deleted_via_button", user_id=user.id, task_id=task_id)
