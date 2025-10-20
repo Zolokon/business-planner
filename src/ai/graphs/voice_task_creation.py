@@ -327,6 +327,8 @@ async def format_response_node(
         return {**state, "telegram_response": message}
 
     # Success message - clean formatting without emojis
+    from datetime import datetime
+
     business_names = {1: "Inventum", 2: "Inventum Lab", 3: "R&D", 4: "Trade"}
     priority_names = {1: "ВЫСОКИЙ", 2: "СРЕДНИЙ", 3: "НИЗКИЙ", 4: "ОТЛОЖЕННЫЙ"}
 
@@ -342,7 +344,6 @@ async def format_response_node(
 
     if state.get("parsed_deadline"):
         # Convert deadline string to readable format
-        from datetime import datetime
         try:
             deadline_date = datetime.fromisoformat(state["parsed_deadline"])
             deadline_text = deadline_date.strftime("%d.%m.%Y")
