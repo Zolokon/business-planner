@@ -517,13 +517,13 @@ async def test_business_detection_maxim_dima_repair_by_default(mock_openai_clien
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_business_detection_maxim_dima_with_rnd_keywords(mock_openai_client):
-    """Test that Максим/Дима WITH R&D keywords → R&D (id:3)."""
+    """Test that Максим/Дима WITH explicit 'разработка' → R&D (id:3)."""
 
     test_cases = [
-        ("Максим должен сделать прототип корпуса", "prototype"),
-        ("Дима соберет плату управления в workshop", "electronics assembly"),
-        ("Максим протестирует новую разработку", "development test"),
-        ("Дима должен собрать электронику для нового устройства", "electronics"),
+        ("Максим занимается разработкой нового устройства", "development task"),
+        ("Дима работает над разработкой прототипа", "prototype development"),
+        ("Максим ведет разработку системы управления", "system development"),
+        ("Дима помогает с разработкой электроники", "electronics development"),
     ]
 
     with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
@@ -552,13 +552,13 @@ async def test_business_detection_location_overrides_team_rule(mock_openai_clien
 
     test_cases = [
         # Location: мастерская → ALWAYS Inventum (id:1)
-        ("Максим должен сделать прототип для мастерской", 1, "location override: мастерская"),
-
-        # Location: workshop → ALWAYS R&D (id:3)
-        ("Максим должен починить фрезер в workshop", 3, "location override: workshop"),
+        ("Максим работает над разработкой для мастерской", 1, "location override: мастерская"),
 
         # Location: лаборатория → ALWAYS Inventum Lab (id:2)
         ("Дима доставит материалы в лабораторию", 2, "location override: лаборатория"),
+
+        # No location but "разработка" mentioned → R&D (id:3)
+        ("Максим ведет разработку нового прототипа", 3, "разработка keyword → R&D"),
     ]
 
     with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):

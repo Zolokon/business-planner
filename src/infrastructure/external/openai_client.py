@@ -286,10 +286,9 @@ BUSINESSES:
    Keywords: коронка, моделирование, CAD, CAM, фрезеровка, протез
    Team: Юрий Владимирович, Мария
 
-3. R&D (id:3) - Prototyping & electronics development
-   Location: "workshop" (English)
-   Keywords: прототип, плата, разработка, сборка, тест, электроника
-   Team: Максим, Дима
+3. R&D (id:3) - Research & Development (RARE!)
+   Keywords: разработка (explicit mention required!)
+   Team: Максим, Дима (part-time, rarely)
 
 4. IMPORT & TRADE (id:4) - Equipment import from China
    Keywords: поставщик, Китай, контракт, таможня, импорт, логистика
@@ -299,11 +298,10 @@ CRITICAL RULES - Business Detection Priority:
 1. Location mentioned:
    - "мастерская" → ALWAYS id:1 (Inventum repair)
    - "лаборатория" → ALWAYS id:2 (Inventum Lab)
-   - "workshop" → ALWAYS id:3 (R&D)
 
-2. Team member mentioned (Максим/Дима):
-   - If R&D keywords (прототип, плата, разработка, workshop) → id:3 (R&D)
-   - Otherwise → id:1 (Inventum repair)
+2. Максим or Дима mentioned (they work mainly in Inventum repair):
+   - If "разработка" explicitly mentioned → id:3 (R&D) [RARE CASE]
+   - Otherwise → id:1 (Inventum repair) [DEFAULT - most tasks]
 
 3. If no location/team, use keywords to detect business.
 
