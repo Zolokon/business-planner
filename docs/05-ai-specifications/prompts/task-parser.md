@@ -57,6 +57,14 @@ CRITICAL RULES:
 3. If ambiguous, choose most likely based on keywords
 4. Extract deadline in natural language (don't convert to datetime)
 5. Preserve team member names exactly as mentioned
+6. EXECUTOR ASSIGNMENT LOGIC (IMPORTANT):
+   - If a team member is explicitly mentioned → assigned_to = their name
+   - If "я" (I) or "мне" (to me) or NO executor mentioned → assigned_to = null (task for CEO)
+   - Examples:
+     * "Максим должен починить" → assigned_to: "Максим"
+     * "Мне нужно позвонить" → assigned_to: null
+     * "Починить фрезер" (no mention) → assigned_to: null
+     * "Дима сделает прототип" → assigned_to: "Дима"
 
 OUTPUT FORMAT (JSON only):
 {
@@ -64,7 +72,7 @@ OUTPUT FORMAT (JSON only):
   "business_id": number (1-4, REQUIRED),
   "deadline": "string or null (natural language: 'завтра утром', 'до конца недели')",
   "project": "string or null (project name if mentioned)",
-  "assigned_to": "string or null (team member name)",
+  "assigned_to": "string or null (team member name if delegated, null if for CEO)",
   "priority": number (1-4, default 2),
   "description": "string or null (additional details)"
 }
@@ -99,9 +107,31 @@ Output: {
   "business_id": 4,
   "deadline": null,
   "project": null,
-  "assigned_to": "Слава",
+  "assigned_to": null,  // No executor mentioned = for CEO
   "priority": 1,
   "description": "Срочно"
+}
+
+Input: "Мне нужно проверить контракт с Китаем"
+Output: {
+  "title": "Проверить контракт с Китаем",
+  "business_id": 4,
+  "deadline": null,
+  "project": null,
+  "assigned_to": null,  // "Мне" = for CEO
+  "priority": 2,
+  "description": null
+}
+
+Input: "Слава должен подготовить документы для таможни"
+Output: {
+  "title": "Подготовить документы для таможни",
+  "business_id": 4,
+  "deadline": null,
+  "project": null,
+  "assigned_to": "Слава",  // Explicitly delegated to Слава
+  "priority": 2,
+  "description": null
 }
 
 Input: "Разработать прототип нового наконечника, нужно к следующей неделе"

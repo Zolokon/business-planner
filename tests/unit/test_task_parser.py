@@ -374,3 +374,106 @@ async def test_parsing_russian_deadline_keywords(mock_openai_client):
             )
 
             assert parsed.deadline == expected_iso
+
+
+# ============================================================================
+# Executor Assignment Logic Tests (NEW)
+# ============================================================================
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_executor_assignment_team_member_mentioned(mock_openai_client):
+    """Test that explicit team member mention assigns to them."""
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        mock_openai_client.parse_task = AsyncMock(return_value={
+            "title": "Починить фрезер",
+            "business_id": 1,
+            "assigned_to": "Максим",  # Explicitly mentioned
+            "priority": 2
+        })
+
+        parsed = await parse_task_from_transcript(
+            transcript="Максим должен починить фрезер",
+            user_id=1
+        )
+
+        assert parsed.assigned_to == "Максим"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_executor_assignment_no_mention_is_for_ceo(mock_openai_client):
+    """Test that no executor mention means task for CEO (assigned_to = null)."""
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        mock_openai_client.parse_task = AsyncMock(return_value={
+            "title": "Починить фрезер",
+            "business_id": 1,
+            "assigned_to": None,  # No mention = for CEO
+            "priority": 2
+        })
+
+        parsed = await parse_task_from_transcript(
+            transcript="Нужно починить фрезер",  # No executor mentioned
+            user_id=1
+        )
+
+        assert parsed.assigned_to is None
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_executor_assignment_self_reference(mock_openai_client):
+    """Test that 'я', 'мне' (I, to me) assigns to CEO (null)."""
+
+    test_cases = [
+        ("Мне нужно позвонить клиенту", None),
+        ("Я должен проверить контракт", None),
+        ("Позвонить клиенту", None),  # No mention
+    ]
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        for transcript, expected_assigned_to in test_cases:
+            mock_openai_client.parse_task = AsyncMock(return_value={
+                "title": "Test task",
+                "business_id": 1,
+                "assigned_to": expected_assigned_to,
+                "priority": 2
+            })
+
+            parsed = await parse_task_from_transcript(
+                transcript=transcript,
+                user_id=1
+            )
+
+            assert parsed.assigned_to == expected_assigned_to, f"Failed for: {transcript}"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_executor_assignment_different_team_members(mock_openai_client):
+    """Test executor assignment for different team members."""
+
+    team_members = {
+        "Дима": "Дима должен сделать прототип",
+        "Максут": "Максут выедет к клиенту",
+        "Мария": "Мария смоделирует коронки",
+        "Слава": "Слава подготовит документы",
+    }
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        for member_name, transcript in team_members.items():
+            mock_openai_client.parse_task = AsyncMock(return_value={
+                "title": "Test task",
+                "business_id": 1,
+                "assigned_to": member_name,
+                "priority": 2
+            })
+
+            parsed = await parse_task_from_transcript(
+                transcript=transcript,
+                user_id=1
+            )
+
+            assert parsed.assigned_to == member_name

@@ -295,7 +295,16 @@ THE 4 BUSINESSES:
    Keywords: поставщик, Китай, контракт, таможня, логистика, импорт
    Team: Слава (Юрист/бухгалтер)
 
-CRITICAL: Every task MUST have business_id (1-4).
+CRITICAL RULES:
+1. Every task MUST have business_id (1-4)
+2. EXECUTOR ASSIGNMENT LOGIC:
+   - If a team member is explicitly mentioned → assigned_to = their name
+   - If "я" (I) or "мне" (to me) or no executor mentioned → assigned_to = null (task for CEO)
+   - Examples:
+     * "Максим должен починить" → assigned_to: "Максим"
+     * "Мне нужно позвонить" → assigned_to: null
+     * "Починить фрезер" → assigned_to: null (no mention = for me)
+     * "Дима сделает прототип" → assigned_to: "Дима"
 
 OUTPUT FORMAT (JSON only):
 {
@@ -303,7 +312,7 @@ OUTPUT FORMAT (JSON only):
   "business_id": number (1-4, REQUIRED),
   "deadline": "string or null",
   "project": "string or null",
-  "assigned_to": "string or null",
+  "assigned_to": "string or null (name if delegated, null if for CEO)",
   "priority": number (1-4, default 2)
 }"""
     
