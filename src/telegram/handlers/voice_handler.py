@@ -74,7 +74,9 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
         )
         
         # Process through LangGraph workflow
-        async with get_session() as session:
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
             result = await process_voice_message(
                 audio_bytes=bytes(voice_bytes),
                 audio_duration=voice.duration,
@@ -82,6 +84,8 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
                 telegram_chat_id=chat_id,
                 session=session
             )
+        finally:
+            await session.close()
         
         # Send response
         response = result.get("telegram_response", "❌ Ошибка обработки")
