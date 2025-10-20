@@ -30,14 +30,22 @@ Base = declarative_base()
 # ============================================================================
 
 # Create async engine
+# Skip pool_size/max_overflow for SQLite (tests)
+engine_kwargs = {
+    "echo": settings.db_echo,
+    "pool_pre_ping": True,
+    "pool_recycle": 3600,
+    "future": True
+}
+
+# Only add pool settings for PostgreSQL (not SQLite)
+if not settings.database_url.startswith('sqlite'):
+    engine_kwargs["pool_size"] = settings.db_pool_size
+    engine_kwargs["max_overflow"] = settings.db_max_overflow
+
 engine = create_async_engine(
     settings.database_url,
-    echo=settings.db_echo,  # Log SQL queries (debug mode)
-    pool_size=settings.db_pool_size,
-    max_overflow=settings.db_max_overflow,
-    pool_pre_ping=True,  # Check connection health before using
-    pool_recycle=3600,   # Recycle connections after 1 hour
-    future=True
+    **engine_kwargs
 )
 
 # Session factory

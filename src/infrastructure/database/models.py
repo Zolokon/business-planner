@@ -12,7 +12,26 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
-from pgvector.sqlalchemy import Vector
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+import os
+
+# Use JSON for SQLite (tests), JSONB for PostgreSQL (production)
+_is_sqlite = os.environ.get('DATABASE_URL', '').startswith('sqlite')
+JSONType = JSON if _is_sqlite else JSONB
+
+# For arrays: use JSON for SQLite, ARRAY for PostgreSQL
+def ArrayType(item_type):
+    """Get appropriate array type based on database."""
+    if _is_sqlite:
+        return JSON  # Store as JSON array in SQLite
+    return ARRAY(item_type)
+
+try:
+    from pgvector.sqlalchemy import Vector
+except ImportError:
+    # For SQLite tests without pgvector
+    Vector = None
 
 from src.infrastructure.database.connection import Base
 
@@ -35,7 +54,7 @@ class UserORM(Base):
     name = Column(String(100), nullable=False)
     username = Column(String(100))
     timezone = Column(String(50), default="Asia/Almaty", nullable=False)
-    preferences = Column(JSONB, default={}, nullable=False)
+    preferences = Column(JSONType, default={}, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     last_active = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
@@ -57,7 +76,7 @@ class BusinessORM(Base):
     name = Column(String(50), nullable=False, unique=True)
     display_name = Column(String(100), nullable=False)
     description = Column(Text)
-    keywords = Column(ARRAY(Text), default=[], nullable=False)
+    keywords = Column(ArrayType(Text), default=[], nullable=False)
     color = Column(String(7))
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
@@ -79,8 +98,8 @@ class MemberORM(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
     role = Column(String(200))
-    business_ids = Column(ARRAY(Integer), nullable=False, default=[])
-    skills = Column(ARRAY(Text), default=[])
+    business_ids = Column(ArrayType(Integer), nullable=False, default=[])
+    skills = Column(ArrayType(Text), default=[])
     is_cross_functional = Column(Boolean, default=False)
     notes = Column(Text)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
@@ -168,10 +187,11 @@ class TaskORM(Base):
     completed_at = Column(TIMESTAMP(timezone=True))
     
     # AI/ML - Vector embedding (1536 dimensions)
-    embedding = Column(Vector(1536))
+    # Use JSON array for SQLite (tests), Vector for PostgreSQL (production)
+    embedding = Column(Vector(1536) if Vector else JSON)
 
     # Flexible metadata
-    task_metadata = Column(JSONB, default={})
+    task_metadata = Column(JSONType, default={})
     
     # Constraints
     __table_args__ = (
@@ -205,7 +225,7 @@ class TaskHistoryORM(Base):
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     action = Column(String(50), nullable=False)
-    changes = Column(JSONB, default={})
+    changes = Column(JSONType, default={})
     duration = Column(Integer)  # Actual duration if completed
     occurred_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     

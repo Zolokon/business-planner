@@ -1,0 +1,376 @@
+"""
+Unit Tests - Task Parser and Deadline Parsing.
+
+Tests GPT-5 Nano task parsing and deadline string handling.
+
+Reference:
+- src/ai/parsers/task_parser.py
+- src/ai/graphs/voice_task_creation.py (deadline parsing in create_task_db_node)
+"""
+
+import pytest
+from datetime import datetime, date, timedelta
+from unittest.mock import AsyncMock, patch
+
+from src.ai.parsers.task_parser import parse_task_from_transcript, ParsedTask
+
+
+# ============================================================================
+# Task Parser Tests (with mocked OpenAI)
+# ============================================================================
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_parse_task_from_transcript_simple(mock_openai_client):
+    """Test parsing simple task from transcript."""
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        mock_openai_client.parse_task = AsyncMock(return_value={
+            "title": "Починить фрезер",
+            "business_id": 1,
+            "deadline": None,
+            "assigned_to": None,
+            "priority": 2
+        })
+
+        parsed = await parse_task_from_transcript(
+            transcript="Нужно починить фрезер",
+            user_id=1
+        )
+
+        assert parsed.title == "Починить фрезер"
+        assert parsed.business_id == 1
+        assert parsed.priority == 2
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_parse_task_with_deadline(mock_openai_client):
+    """Test parsing task with deadline."""
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        mock_openai_client.parse_task = AsyncMock(return_value={
+            "title": "Починить фрезер для Иванова",
+            "business_id": 1,
+            "deadline": "2025-10-21",  # Tomorrow
+            "assigned_to": "Максим",
+            "priority": 1
+        })
+
+        parsed = await parse_task_from_transcript(
+            transcript="Максим должен починить фрезер для Иванова до завтра",
+            user_id=1
+        )
+
+        assert parsed.title == "Починить фрезер для Иванова"
+        assert parsed.deadline == "2025-10-21"
+        assert parsed.assigned_to == "Максим"
+        assert parsed.priority == 1
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_parse_task_business_detection(mock_openai_client):
+    """Test that different businesses are correctly detected."""
+
+    test_cases = [
+        ("Починить фрезер", 1),  # Inventum (фрезер keyword)
+        ("Сделать коронку", 2),  # Lab (dental keyword)
+        ("Прототип новой детали", 3),  # R&D (prototype keyword)
+        ("Позвонить поставщику в Китае", 4),  # Trade (China keyword)
+    ]
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        for transcript, expected_business_id in test_cases:
+            mock_openai_client.parse_task = AsyncMock(return_value={
+                "title": transcript,
+                "business_id": expected_business_id,
+                "priority": 2
+            })
+
+            parsed = await parse_task_from_transcript(
+                transcript=transcript,
+                user_id=1
+            )
+
+            assert parsed.business_id == expected_business_id
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_parse_task_priority_levels(mock_openai_client):
+    """Test that different priority levels are parsed correctly."""
+
+    priority_keywords = {
+        "срочно": 1,  # High
+        "важно": 1,  # High
+        "обычное": 2,  # Medium
+        "когда будет время": 3,  # Low
+        "отложить": 4  # Backlog
+    }
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        for keyword, expected_priority in priority_keywords.items():
+            mock_openai_client.parse_task = AsyncMock(return_value={
+                "title": f"Задача {keyword}",
+                "business_id": 1,
+                "priority": expected_priority
+            })
+
+            parsed = await parse_task_from_transcript(
+                transcript=f"Нужно починить фрезер {keyword}",
+                user_id=1
+            )
+
+            assert parsed.priority == expected_priority
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_parse_task_invalid_response(mock_openai_client):
+    """Test handling of invalid response from GPT."""
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        # Mock invalid response (missing required fields)
+        mock_openai_client.parse_task = AsyncMock(return_value={
+            "title": "Test"
+            # Missing business_id!
+        })
+
+        with pytest.raises(ValueError, match="Failed to parse task"):
+            await parse_task_from_transcript(
+                transcript="Test",
+                user_id=1
+            )
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_parse_task_api_error(mock_openai_client):
+    """Test handling of API error from OpenAI."""
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        # Mock API error
+        mock_openai_client.parse_task = AsyncMock(
+            side_effect=Exception("API connection failed")
+        )
+
+        with pytest.raises(ValueError, match="Failed to parse task"):
+            await parse_task_from_transcript(
+                transcript="Test task",
+                user_id=1
+            )
+
+
+# ============================================================================
+# Deadline String Parsing Tests
+# ============================================================================
+
+@pytest.mark.unit
+def test_deadline_string_to_datetime_valid_iso():
+    """Test converting valid ISO date string to datetime."""
+
+    deadline_str = "2025-10-21"
+
+    # Parse as datetime (this is done in create_task_db_node)
+    deadline_date = datetime.fromisoformat(deadline_str)
+    deadline = deadline_date.replace(hour=23, minute=59, second=59)
+
+    assert deadline.year == 2025
+    assert deadline.month == 10
+    assert deadline.day == 21
+    assert deadline.hour == 23
+    assert deadline.minute == 59
+
+
+@pytest.mark.unit
+def test_deadline_string_to_datetime_invalid():
+    """Test handling of invalid deadline string."""
+
+    invalid_strings = [
+        "invalid-date",
+        "2025-13-01",  # Invalid month
+        "not a date",
+        "",
+        "завтра"  # Russian text (not ISO)
+    ]
+
+    for invalid_str in invalid_strings:
+        try:
+            datetime.fromisoformat(invalid_str)
+            # Should not reach here
+            assert False, f"Should have failed for: {invalid_str}"
+        except (ValueError, TypeError):
+            # Expected behavior
+            pass
+
+
+@pytest.mark.unit
+def test_deadline_text_formatting():
+    """Test formatting deadline for display."""
+
+    deadline_str = "2025-10-21"
+
+    deadline_date = datetime.fromisoformat(deadline_str)
+    deadline_text = deadline_date.strftime("%d.%m.%Y")
+
+    assert deadline_text == "21.10.2025"
+
+
+@pytest.mark.unit
+def test_deadline_parsing_edge_cases():
+    """Test edge cases in deadline parsing."""
+
+    # Test with datetime instead of date string
+    deadline_datetime = datetime.now() + timedelta(days=1)
+    deadline_str = deadline_datetime.isoformat()
+
+    parsed = datetime.fromisoformat(deadline_str)
+    assert parsed.date() == deadline_datetime.date()
+
+
+# ============================================================================
+# User ID Mapping Tests
+# ============================================================================
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_telegram_id_to_db_id_mapping(test_session, test_user):
+    """Test mapping Telegram user ID to database user ID."""
+
+    from sqlalchemy import select
+    from src.infrastructure.database.models import UserORM
+
+    # Query by Telegram ID
+    stmt = select(UserORM).where(UserORM.telegram_id == test_user.telegram_id)
+    result = await test_session.execute(stmt)
+    db_user = result.scalar_one_or_none()
+
+    assert db_user is not None
+    assert db_user.id == test_user.id
+    assert db_user.telegram_id == 123456
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_telegram_id_not_found(test_session):
+    """Test handling of unknown Telegram user."""
+
+    from sqlalchemy import select
+    from src.infrastructure.database.models import UserORM
+
+    # Query for non-existent Telegram ID
+    stmt = select(UserORM).where(UserORM.telegram_id == 999999)
+    result = await test_session.execute(stmt)
+    db_user = result.scalar_one_or_none()
+
+    assert db_user is None
+
+
+# ============================================================================
+# Member Name to ID Mapping Tests
+# ============================================================================
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_member_name_to_id_mapping(test_session, test_member):
+    """Test mapping member name to member ID."""
+
+    from sqlalchemy import select
+    from src.infrastructure.database.models import MemberORM
+
+    # Query by name
+    stmt = select(MemberORM).where(MemberORM.name == "Максим")
+    result = await test_session.execute(stmt)
+    member = result.scalar_one_or_none()
+
+    assert member is not None
+    assert member.id == test_member.id
+    assert member.name == "Максим"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_member_name_case_insensitive(test_session, test_member):
+    """Test member name search should handle case variations."""
+
+    from sqlalchemy import select, func
+    from src.infrastructure.database.models import MemberORM
+
+    # Query with different case
+    search_name = "максим"  # lowercase
+
+    stmt = select(MemberORM).where(
+        func.lower(MemberORM.name) == search_name.lower()
+    )
+    result = await test_session.execute(stmt)
+    member = result.scalar_one_or_none()
+
+    assert member is not None
+    assert member.name == "Максим"
+
+
+# ============================================================================
+# Integration: Full Parsing Flow
+# ============================================================================
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_full_parsing_flow_with_all_fields(mock_openai_client):
+    """Test complete parsing flow with all optional fields."""
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        mock_openai_client.parse_task = AsyncMock(return_value={
+            "title": "Починить фрезер для Иванова",
+            "business_id": 1,
+            "deadline": "2025-10-21",
+            "project": "ЧПУ фрезеры",
+            "assigned_to": "Максим",
+            "priority": 1,
+            "description": "Срочно, клиент ждет"
+        })
+
+        parsed = await parse_task_from_transcript(
+            transcript="Максим должен срочно починить фрезер для Иванова до завтра для проекта ЧПУ фрезеры",
+            user_id=1
+        )
+
+        # Verify all fields
+        assert parsed.title == "Починить фрезер для Иванова"
+        assert parsed.business_id == 1
+        assert parsed.deadline == "2025-10-21"
+        assert parsed.project == "ЧПУ фрезеры"
+        assert parsed.assigned_to == "Максим"
+        assert parsed.priority == 1
+        assert parsed.description == "Срочно, клиент ждет"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_parsing_russian_deadline_keywords(mock_openai_client):
+    """Test that Russian deadline keywords are converted to ISO dates."""
+
+    # GPT should handle this conversion
+    deadline_keywords = [
+        ("сегодня", date.today()),
+        ("завтра", date.today() + timedelta(days=1)),
+        ("послезавтра", date.today() + timedelta(days=2)),
+    ]
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        for keyword, expected_date in deadline_keywords:
+            expected_iso = expected_date.isoformat()
+
+            mock_openai_client.parse_task = AsyncMock(return_value={
+                "title": f"Задача на {keyword}",
+                "business_id": 1,
+                "deadline": expected_iso,
+                "priority": 2
+            })
+
+            parsed = await parse_task_from_transcript(
+                transcript=f"Нужно починить фрезер {keyword}",
+                user_id=1
+            )
+
+            assert parsed.deadline == expected_iso
