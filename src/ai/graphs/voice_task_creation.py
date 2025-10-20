@@ -104,11 +104,10 @@ async def transcribe_voice_node(state: VoiceTaskState) -> VoiceTaskState:
 
 
 async def parse_task_node(
-    state: VoiceTaskState,
-    session: AsyncSession
+    state: VoiceTaskState
 ) -> VoiceTaskState:
     """Node 2: Parse task structure using GPT-5 Nano.
-    
+
     Reference: docs/05-ai-specifications/langgraph-flows.md (Node 2)
     """
     
@@ -149,68 +148,75 @@ async def parse_task_node(
 
 
 async def estimate_time_rag_node(
-    state: VoiceTaskState,
-    session: AsyncSession
+    state: VoiceTaskState
 ) -> VoiceTaskState:
     """Node 3: Estimate time using RAG.
-    
-    Reference: 
+
+    Reference:
     - ADR-004 (RAG Strategy)
     - docs/05-ai-specifications/langgraph-flows.md (Node 3)
     """
-    
+
     if state.get("error"):
         return state
-    
+
     logger.info(
         "node_estimate_start",
         title=state["parsed_title"],
         business_id=state["parsed_business_id"]
     )
-    
+
     try:
-        # Get repository
-        repo = TaskRepository(session)
-        retriever = RAGRetriever(repo)
+        # Get database session
+        from src.infrastructure.database import get_session
+        session_gen = get_session()
+        session = await anext(session_gen)
+
+        try:
+            # Get repository
+            repo = TaskRepository(session)
+            retriever = RAGRetriever(repo)
         
-        # Find similar tasks (with business isolation!)
-        similar_tasks = await retriever.find_similar_tasks(
-            task_title=state["parsed_title"],
-            business_id=state["parsed_business_id"]
-        )
-        
-        # Estimate time
-        if similar_tasks:
-            # Format for GPT-5 Nano
-            similar_data = [
-                {
-                    "title": t.title,
-                    "actual_duration": t.actual_duration
-                }
-                for t in similar_tasks
-            ]
-            
-            estimated_duration = await openai_client.estimate_time(
+            # Find similar tasks (with business isolation!)
+            similar_tasks = await retriever.find_similar_tasks(
                 task_title=state["parsed_title"],
-                business_name=f"Business {state['parsed_business_id']}",
-                similar_tasks=similar_data
+                business_id=state["parsed_business_id"]
             )
-        else:
-            # No history, use default
-            estimated_duration = 60  # 1 hour default
-        
-        logger.info(
-            "node_estimate_complete",
-            estimated_duration=estimated_duration,
-            similar_tasks_count=len(similar_tasks)
-        )
-        
-        return {
-            **state,
-            "similar_tasks_count": len(similar_tasks),
-            "estimated_duration": estimated_duration
-        }
-        
+
+            # Estimate time
+            if similar_tasks:
+                # Format for GPT-5 Nano
+                similar_data = [
+                    {
+                        "title": t.title,
+                        "actual_duration": t.actual_duration
+                    }
+                    for t in similar_tasks
+                ]
+
+                estimated_duration = await openai_client.estimate_time(
+                    task_title=state["parsed_title"],
+                    business_name=f"Business {state['parsed_business_id']}",
+                    similar_tasks=similar_data
+                )
+            else:
+                # No history, use default
+                estimated_duration = 60  # 1 hour default
+
+            logger.info(
+                "node_estimate_complete",
+                estimated_duration=estimated_duration,
+                similar_tasks_count=len(similar_tasks)
+            )
+
+            return {
+                **state,
+                "similar_tasks_count": len(similar_tasks),
+                "estimated_duration": estimated_duration
+            }
+        finally:
+            await session.close()
+
     except Exception as e:
         logger.warning("node_estimate_failed", error=str(e), using_default=True)
         # Non-critical error, use default
@@ -222,49 +228,56 @@ async def estimate_time_rag_node(
 
 
 async def create_task_db_node(
-    state: VoiceTaskState,
-    session: AsyncSession
+    state: VoiceTaskState
 ) -> VoiceTaskState:
     """Node 4: Create task in database.
-    
+
     Reference: docs/05-ai-specifications/langgraph-flows.md (Node 5)
     """
-    
+
     if state.get("error"):
         return state
-    
+
     logger.info("node_create_task_start")
-    
+
     try:
-        # Create task
-        repo = TaskRepository(session)
+        # Get database session
+        from src.infrastructure.database import get_session
+        session_gen = get_session()
+        session = await anext(session_gen)
+
+        try:
+            # Create task
+            repo = TaskRepository(session)
         
-        task_data = TaskCreate(
-            title=state["parsed_title"],
-            business_id=state["parsed_business_id"],
-            priority=state.get("parsed_priority", 2),
-            estimated_duration=state.get("estimated_duration"),
-            deadline_text=state.get("parsed_deadline_text"),
-            created_via="voice"
-        )
-        
-        task = await repo.create(task_data, user_id=state["user_id"])
-        
-        # Generate embedding (async, doesn't block)
-        # This will happen in background
-        # await generate_and_store_embedding(task.id, task.title, repo)
-        
-        logger.info(
-            "node_create_task_complete",
-            task_id=task.id,
-            business_id=task.business_id
-        )
-        
-        return {
-            **state,
-            "created_task_id": task.id
-        }
-        
+            task_data = TaskCreate(
+                title=state["parsed_title"],
+                business_id=state["parsed_business_id"],
+                priority=state.get("parsed_priority", 2),
+                estimated_duration=state.get("estimated_duration"),
+                deadline_text=state.get("parsed_deadline_text"),
+                created_via="voice"
+            )
+
+            task = await repo.create(task_data, user_id=state["user_id"])
+
+            # Generate embedding (async, doesn't block)
+            # This will happen in background
+            # await generate_and_store_embedding(task.id, task.title, repo)
+
+            logger.info(
+                "node_create_task_complete",
+                task_id=task.id,
+                business_id=task.business_id
+            )
+
+            return {
+                **state,
+                "created_task_id": task.id
+            }
+        finally:
+            await session.close()
+
     except Exception as e:
         logger.error("node_create_task_failed", error=str(e))
         return {
@@ -275,11 +288,10 @@ async def create_task_db_node(
 
 
 async def format_response_node(
-    state: VoiceTaskState,
-    session: AsyncSession
+    state: VoiceTaskState
 ) -> VoiceTaskState:
     """Node 5: Format Telegram response.
-    
+
     Reference: docs/05-ai-specifications/langgraph-flows.md (Node 7)
     """
     
