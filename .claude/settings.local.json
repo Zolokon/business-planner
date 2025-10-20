@@ -1,10 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit -m \"Fix user_id mapping: lookup database user from Telegram ID\n\n- Added database user lookup in voice_handler.py\n- Maps Telegram ID → database user ID before task creation\n- Fixes foreign key violation error\n- Returns clear error if user not found in database\")",
-      "Bash(ssh root@164.92.225.137 \"tail -50 /root/business-planner/app.log\")",
-      "Bash(git commit -m \"Fix business name display in task creation response\n\n- Changed from generic ''Business 2'' to actual business names\n- Added business_names mapping: 1=Inventum, 2=Inventum Lab, 3=R&D, 4=Trade\n- Now shows ''🦷 Бизнес: Inventum Lab'' instead of ''🦷 Бизнес: Business 2''\")",
-      "Bash(git add -A)"
+      "Bash(ssh root@164.92.225.137 \"docker exec planner_postgres psql -U planner -d planner -c ''SELECT id, title, deadline, status, user_id FROM tasks ORDER BY created_at DESC LIMIT 10;''\")",
+      "Bash(ssh root@164.92.225.137 \"tail -200 /root/business-planner/app.log | grep -A 5 ''node_parse_complete''\")",
+      "Bash(ssh root@164.92.225.137 \"tail -200 /root/business-planner/app.log | grep -B 3 ''task_parsed''\")",
+      "Bash(git commit -m \"Fix deadline parsing: convert GPT date string to datetime\n\nProblem: Tasks created via voice had NULL deadline, so /today command found no tasks.\n\nRoot cause:\n- GPT returns ''deadline'': ''2025-10-20'' (date string)\n- ParsedTask expected ''deadline_text'' but got ''deadline''  \n- No conversion from string to datetime object\n\nChanges:\n- src/ai/parsers/task_parser.py: Updated ParsedTask model\n  - deadline_text → deadline (matches GPT output)\n  - project_name → project\n  - assigned_to_name → assigned_to\n  - Added deadline to logging\n\n- src/ai/graphs/voice_task_creation.py: \n  - parse_task_node: Updated field names (parsed_deadline instead of parsed_deadline_text)\n  - create_task_db_node: Added deadline string → datetime conversion\n    - Parses ISO date string (e.g. ''2025-10-20'')\n    - Sets time to end of day (23:59:59)\n    - Generates deadline_text for display\n  - format_response_node: Updated to use parsed_deadline with datetime conversion\n\nNow tasks created with ''сегодня'' will have deadline set correctly and appear in /today\")"
     ],
     "deny": [],
     "ask": []

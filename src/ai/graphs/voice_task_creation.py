@@ -126,15 +126,16 @@ async def parse_task_node(
         logger.info(
             "node_parse_complete",
             title=parsed.title,
-            business_id=parsed.business_id
+            business_id=parsed.business_id,
+            deadline=parsed.deadline
         )
-        
+
         return {
             **state,
             "parsed_title": parsed.title,
             "parsed_business_id": parsed.business_id,
-            "parsed_deadline_text": parsed.deadline_text,
-            "parsed_assigned_to": parsed.assigned_to_name,
+            "parsed_deadline": parsed.deadline,  # Date string
+            "parsed_assigned_to": parsed.assigned_to,
             "parsed_priority": parsed.priority
         }
         
@@ -243,19 +244,34 @@ async def create_task_db_node(
     try:
         # Get database session
         from src.infrastructure.database import get_session
+        from datetime import datetime
         session_gen = get_session()
         session = await anext(session_gen)
 
         try:
             # Create task
             repo = TaskRepository(session)
-        
+
+            # Convert deadline string to datetime if present
+            deadline = None
+            deadline_text = None
+            if state.get("parsed_deadline"):
+                try:
+                    # Parse date string (e.g. "2025-10-20")
+                    deadline_date = datetime.fromisoformat(state["parsed_deadline"])
+                    # Set time to end of day
+                    deadline = deadline_date.replace(hour=23, minute=59, second=59)
+                    deadline_text = deadline_date.strftime("%d.%m.%Y")
+                except (ValueError, TypeError) as e:
+                    logger.warning("deadline_parse_failed", deadline=state.get("parsed_deadline"), error=str(e))
+
             task_data = TaskCreate(
                 title=state["parsed_title"],
                 business_id=state["parsed_business_id"],
                 priority=state.get("parsed_priority", 2),
                 estimated_duration=state.get("estimated_duration"),
-                deadline_text=state.get("parsed_deadline_text"),
+                deadline=deadline,
+                deadline_text=deadline_text,
                 created_via="voice"
             )
 
@@ -325,9 +341,16 @@ async def format_response_node(
     
     if state.get("parsed_assigned_to"):
         message += f"👤 Кому: {state['parsed_assigned_to']}\n"
-    
-    if state.get("parsed_deadline_text"):
-        message += f"📅 {state['parsed_deadline_text']}\n"
+
+    if state.get("parsed_deadline"):
+        # Convert deadline string to readable format
+        from datetime import datetime
+        try:
+            deadline_date = datetime.fromisoformat(state["parsed_deadline"])
+            deadline_text = deadline_date.strftime("%d.%m.%Y")
+            message += f"📅 {deadline_text}\n"
+        except (ValueError, TypeError):
+            pass
     
     if state.get("estimated_duration"):
         hours = state["estimated_duration"] // 60

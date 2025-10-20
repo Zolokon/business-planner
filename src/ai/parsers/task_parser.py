@@ -17,15 +17,15 @@ from src.utils.logger import logger
 
 class ParsedTask(BaseModel):
     """Parsed task data from AI (GPT-5 Nano output).
-    
+
     Reference: docs/03-api/pydantic-models.md
     """
-    
+
     title: str
     business_id: int
-    deadline_text: str | None = None
-    project_name: str | None = None
-    assigned_to_name: str | None = None
+    deadline: str | None = None  # Date string from GPT (e.g. "2025-10-20")
+    project: str | None = None
+    assigned_to: str | None = None
     priority: int = 2
     description: str | None = None
 
@@ -73,7 +73,8 @@ async def parse_task_from_transcript(
             "task_parsed",
             title=parsed_task.title,
             business_id=parsed_task.business_id,
-            assigned_to=parsed_task.assigned_to_name
+            assigned_to=parsed_task.assigned_to,
+            deadline=parsed_task.deadline
         )
         
         return parsed_task
