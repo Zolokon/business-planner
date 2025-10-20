@@ -319,11 +319,20 @@ JSON OUTPUT:
         context: dict[str, Any] | None
     ) -> str:
         """Build user prompt for task parser."""
-        return f'''Parse this task:
+        from datetime import datetime
 
+        # Current date/time for relative date parsing
+        now = datetime.now()
+        current_datetime = now.strftime("%Y-%m-%d %H:%M")
+        current_day = now.strftime("%A")  # Monday, Tuesday, etc.
+
+        return f'''Current date/time: {current_datetime} ({current_day})
+
+Parse this task:
 "{transcript}"
 
-Extract structured task data in JSON format.'''
+Extract structured task data in JSON format.
+IMPORTANT: Convert relative dates to ISO format using current date above.'''
     
     def _build_time_estimation_context(
         self,
