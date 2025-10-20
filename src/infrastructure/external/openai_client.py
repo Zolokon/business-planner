@@ -127,14 +127,13 @@ class OpenAIClient:
         
         try:
             response = await self.client.chat.completions.create(
-                model=settings.model_parser,  # "gpt-4o-mini"
+                model=settings.model_parser,  # "gpt-5-nano"
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                response_format={"type": "json_object"},
-                temperature=0.1,  # Low for consistency (GPT-4o supports it)
-                max_completion_tokens=500
+                response_format={"type": "json_object"}
+                # Note: GPT-5 nano works best without temperature and max_completion_tokens
             )
             
             duration_ms = int((time.time() - start_time) * 1000)
@@ -193,16 +192,15 @@ class OpenAIClient:
         
         try:
             response = await self.client.chat.completions.create(
-                model=settings.model_reasoning,  # "gpt-4o-mini"
+                model=settings.model_reasoning,  # "gpt-5-nano"
                 messages=[
                     {
                         "role": "system",
-                        "content": "You estimate task duration in minutes based on historical data."
+                        "content": "You estimate task duration in minutes based on historical data. Return only the number."
                     },
                     {"role": "user", "content": context}
-                ],
-                temperature=0.3,  # Slightly higher than parsing (GPT-4o supports it)
-                max_completion_tokens=10  # Just a number!
+                ]
+                # Note: GPT-5 nano works best without temperature and max_completion_tokens
             )
             
             # Parse duration from response
