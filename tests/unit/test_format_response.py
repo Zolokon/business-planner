@@ -47,8 +47,9 @@ async def test_format_response_success_minimal():
 
     # Check response exists
     assert result["telegram_response"] is not None
+    assert "ВЫ СКАЗАЛИ:" in result["telegram_response"]
+    assert "Починить фрезер" in result["telegram_response"]  # In transcript
     assert "ЗАДАЧА СОЗДАНА" in result["telegram_response"]
-    assert "Починить фрезер" in result["telegram_response"]
     assert "Inventum" in result["telegram_response"]  # Business name
     assert "СРЕДНИЙ" in result["telegram_response"]  # Priority
 
@@ -85,8 +86,10 @@ async def test_format_response_success_full_data():
     response = result["telegram_response"]
 
     # Check all fields present
+    assert "ВЫ СКАЗАЛИ:" in response
+    assert "Починить фрезер для Иванова до завтра" in response  # Full transcript
     assert "ЗАДАЧА СОЗДАНА" in response
-    assert "Починить фрезер для Иванова" in response
+    assert "Починить фрезер для Иванова" in response  # Task title
     assert "Inventum" in response
     assert "ВЫСОКИЙ" in response  # Priority
     assert "21.10.2025" in response  # Deadline formatted

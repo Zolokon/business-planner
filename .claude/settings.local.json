@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -m pytest tests/unit/test_task_parser.py -v --tb=short)"
+      "Bash(python -m pytest tests/unit/test_task_parser.py -v --tb=short)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nOptimize GPT-5 Nano prompt: 57% token reduction\n\nPerformance improvement:\n- Tokens: 564 → 245 (-319, 57% reduction)\n- Characters: 1692 → 735 (-957, 57% reduction)\n- Lines: 42 → 15 (-27, 64% reduction)\n- Expected latency: ~1s → ~0.85s (10-15% faster)\n\nChanges to system prompt:\n1. Removed verbose keyword lists (GPT infers from descriptions)\n2. Removed team position titles (names sufficient)\n3. Removed cross-business team (Константин, Лиза rarely mentioned)\n4. Condensed JSON format (compact notation)\n5. Simplified rules (removed redundancy)\n\nWhat was kept (critical):\n- 4 business contexts with team names\n- business_id requirement\n- Executor assignment logic + 3 examples\n- JSON output structure\n\nTesting:\n- 43/43 unit tests still passing\n- No regressions introduced\n- Executor assignment logic verified\n\nFiles:\n- src/infrastructure/external/openai_client.py - optimized prompt\n- docs/05-ai-specifications/prompts/task-parser.md - updated with v2.0\n- docs/PROMPT_OPTIMIZATION.md - complete before/after analysis\n\nCost savings:\n- Per task: $0.0000846 → $0.0000368 (-57%)\n- 10K tasks/month: $0.48 savings/month\n- Annual: $5.76 savings/year\n\n🤖 Generated with Claude Code\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(python -m pytest tests/unit/test_format_response.py -v --tb=short -k \"success\")",
+      "Bash(python -m pytest tests/unit/test_format_response.py -v --tb=short)"
     ],
     "deny": [],
     "ask": []
