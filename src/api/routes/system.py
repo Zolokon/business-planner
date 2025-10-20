@@ -113,3 +113,44 @@ async def trigger_daily_summary():
         logger.error("manual_trigger_failed", error=str(e))
         return {"status": "error", "message": str(e)}
 
+
+@router.delete("/tasks/clear-all")
+async def clear_all_tasks(
+    user_id: int = 1,
+    session: AsyncSession = Depends(get_session)
+):
+    """Clear all tasks for user (for testing/development only).
+
+    WARNING: This permanently deletes all tasks!
+
+    Args:
+        user_id: User ID (default 1)
+        session: Database session
+
+    Returns:
+        Number of deleted tasks
+    """
+    try:
+        from src.infrastructure.database.models import TaskORM
+        from sqlalchemy import delete
+
+        # Delete all tasks for user
+        stmt = delete(TaskORM).where(TaskORM.user_id == user_id)
+        result = await session.execute(stmt)
+        await session.commit()
+
+        deleted_count = result.rowcount
+
+        logger.info("all_tasks_cleared", user_id=user_id, count=deleted_count)
+
+        return {
+            "status": "success",
+            "message": f"Deleted {deleted_count} tasks",
+            "deleted_count": deleted_count
+        }
+
+    except Exception as e:
+        logger.error("clear_tasks_failed", error=str(e))
+        await session.rollback()
+        return {"status": "error", "message": str(e)}
+
