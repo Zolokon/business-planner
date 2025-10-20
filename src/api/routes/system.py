@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.models import Business, Member
 from src.infrastructure.database import get_session, check_database_health
 from src.utils.logger import logger
+from src.services import trigger_daily_summary_now
 
 
 router = APIRouter()
@@ -94,4 +95,21 @@ async def list_members(
     members_orm = result.scalars().all()
     
     return [Member.model_validate(m) for m in members_orm]
+
+
+@router.post("/trigger-daily-summary")
+async def trigger_daily_summary():
+    """Manually trigger daily summary (for testing).
+
+    Sends daily task summary to user immediately.
+
+    Returns:
+        Success message
+    """
+    try:
+        await trigger_daily_summary_now()
+        return {"status": "success", "message": "Daily summary sent"}
+    except Exception as e:
+        logger.error("manual_trigger_failed", error=str(e))
+        return {"status": "error", "message": str(e)}
 

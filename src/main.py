@@ -20,6 +20,7 @@ from src.config import settings
 from src.utils.logger import setup_logging, logger
 from src.api.routes import tasks, system, telegram
 from src.infrastructure.database import init_database, close_database
+from src.services.scheduler import start_scheduler, stop_scheduler
 
 
 @asynccontextmanager
@@ -55,20 +56,26 @@ async def lifespan(app: FastAPI):
     # TODO: Set Telegram webhook (production only)
     # if settings.is_production and settings.telegram_use_webhook:
     #     await setup_telegram_webhook()
-    
+
+    # Start scheduler (daily summaries, etc.)
+    start_scheduler()
+
     logger.info("application_started")
     
     yield  # Application runs
     
     # Shutdown
     logger.info("application_shutting_down")
-    
+
+    # Stop scheduler
+    stop_scheduler()
+
     # Close database connections
     await close_database()
-    
+
     # TODO: Close Redis
     # await redis_client.close()
-    
+
     logger.info("application_stopped")
 
 

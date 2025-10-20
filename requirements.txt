@@ -82,8 +82,9 @@ httpx==0.25.2
 aiohttp==3.9.1
 
 # ============================================================================
-# Background Tasks (Optional)
+# Background Tasks & Scheduling
 # ============================================================================
-# celery==5.3.4  # If needed later
+APScheduler==3.10.4  # Task scheduling (daily summaries)
+# celery==5.3.4  # If needed later for heavy background tasks
 # redis-om==0.2.1  # Redis object mapper (optional)
 
