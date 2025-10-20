@@ -350,6 +350,8 @@ async def format_response_node(
         deadline_value=state.get("parsed_deadline")
     )
 
+    # Always show deadline field
+    deadline_text = "не указан"
     if state.get("parsed_deadline"):
         # Convert deadline string to readable format
         try:
@@ -363,11 +365,12 @@ async def format_response_node(
                 # Only date
                 deadline_text = deadline_dt.strftime("%d.%m.%Y")
 
-            message += f"\nДедлайн:   {deadline_text}"
-
             logger.info("deadline_formatted", deadline_text=deadline_text)
         except (ValueError, TypeError) as e:
             logger.warning("deadline_format_failed", error=str(e), deadline=state.get("parsed_deadline"))
+            deadline_text = "ошибка формата"
+
+    message += f"\nДедлайн:   {deadline_text}"
 
     if state.get("parsed_assigned_to"):
         message += f"\nИсполнитель: {state['parsed_assigned_to']}"

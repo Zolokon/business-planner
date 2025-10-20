@@ -51,6 +51,8 @@ async def test_format_response_success_minimal():
     assert "Починить фрезер" in result["telegram_response"]  # Task title
     assert "Inventum" in result["telegram_response"]  # Business name
     assert "СРЕДНИЙ" in result["telegram_response"]  # Priority
+    assert "Дедлайн:" in result["telegram_response"]  # Always shown
+    assert "не указан" in result["telegram_response"]  # No deadline set
     # Transcript should be in state (sent separately by handler)
     assert result.get("transcript") == "Починить фрезер"
 
