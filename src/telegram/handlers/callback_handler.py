@@ -68,6 +68,18 @@ async def handle_callback_query(
             await handle_complete_callback(query, context, int(param))
         elif action == "edit":
             await handle_edit_callback(query, context, int(param))
+        elif action == "edit_title":
+            await handle_edit_title_callback(query, context, int(param))
+        elif action == "edit_priority":
+            await handle_edit_priority_callback(query, context, int(param))
+        elif action == "edit_deadline":
+            await handle_edit_deadline_callback(query, context, int(param))
+        elif action == "edit_cancel":
+            await handle_edit_cancel_callback(query, context, int(param))
+        elif action == "set_priority":
+            await handle_set_priority_callback(query, context, param)
+        elif action == "set_deadline":
+            await handle_set_deadline_callback(query, context, param)
         elif action == "reschedule":
             await handle_reschedule_callback(query, context, int(param))
         elif action == "delete":
@@ -159,22 +171,274 @@ async def handle_edit_callback(
     task_id: int
 ) -> None:
     """Handle 'edit task' button click.
-    
-    TODO: Implement task editing dialog
-    
+
     Args:
         query: Callback query
         context: Bot context
         task_id: Task ID to edit
     """
-    
+
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
     logger.info("callback_edit_task", task_id=task_id)
-    
+
+    # Get task details
+    try:
+        async with get_session() as session:
+            repo = TaskRepository(session)
+            task = await repo.get_by_id(task_id)
+
+            if not task:
+                await query.edit_message_text(f"❌ Задача #{task_id} не найдена")
+                return
+
+        # Show edit menu
+        business_names = {1: "Inventum", 2: "Inventum Lab", 3: "R&D", 4: "Trade"}
+        priority_names = {1: "🔴 Высокий", 2: "🟡 Средний", 3: "🟢 Низкий", 4: "⚪ Нет срочности"}
+
+        business_name = business_names.get(task.business_id, f"Business {task.business_id}")
+        priority_name = priority_names.get(task.priority, "Не указан")
+        deadline_text = task.deadline.strftime("%d.%m.%Y") if task.deadline else "Не установлен"
+
+        message = f"""✏️ **Редактирование задачи #{task_id}**
+
+📝 **{task.title}**
+
+🦷 Бизнес: {business_name}
+🎯 Приоритет: {priority_name}
+📅 Дедлайн: {deadline_text}
+
+Что хотите изменить?"""
+
+        keyboard = [
+            [
+                InlineKeyboardButton("📝 Название", callback_data=f"edit_title:{task_id}"),
+                InlineKeyboardButton("🎯 Приоритет", callback_data=f"edit_priority:{task_id}")
+            ],
+            [
+                InlineKeyboardButton("📅 Дедлайн", callback_data=f"edit_deadline:{task_id}"),
+                InlineKeyboardButton("❌ Отмена", callback_data=f"edit_cancel:{task_id}")
+            ]
+        ]
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(message, reply_markup=reply_markup)
+
+    except Exception as e:
+        logger.error("callback_edit_failed", task_id=task_id, error=str(e))
+        await query.edit_message_text("❌ Ошибка при загрузке задачи")
+
+
+async def handle_edit_title_callback(
+    query,
+    context: ContextTypes.DEFAULT_TYPE,
+    task_id: int
+) -> None:
+    """Handle edit title button - prompt for new title.
+
+    Args:
+        query: Callback query
+        context: Bot context
+        task_id: Task ID
+    """
+
+    # Store task_id in user context for next message
+    context.user_data["editing_task_id"] = task_id
+    context.user_data["editing_field"] = "title"
+
     await query.edit_message_text(
-        f"✏️ **Редактирование задачи #{task_id}**\n\n"
-        f"Функция в разработке.\n\n"
-        f"Пока что создайте новую задачу через голосовое сообщение."
+        f"✏️ **Изменение названия задачи #{task_id}**\n\n"
+        f"Отправьте новое название задачи текстовым сообщением."
     )
+
+
+async def handle_edit_priority_callback(
+    query,
+    context: ContextTypes.DEFAULT_TYPE,
+    task_id: int
+) -> None:
+    """Handle edit priority button - show priority options.
+
+    Args:
+        query: Callback query
+        context: Bot context
+        task_id: Task ID
+    """
+
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+    keyboard = [
+        [InlineKeyboardButton("🔴 Высокий", callback_data=f"set_priority:1:{task_id}")],
+        [InlineKeyboardButton("🟡 Средний", callback_data=f"set_priority:2:{task_id}")],
+        [InlineKeyboardButton("🟢 Низкий", callback_data=f"set_priority:3:{task_id}")],
+        [InlineKeyboardButton("⚪ Нет срочности", callback_data=f"set_priority:4:{task_id}")],
+        [InlineKeyboardButton("❌ Отмена", callback_data=f"edit:{task_id}")]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(
+        f"🎯 **Выберите приоритет для задачи #{task_id}:**",
+        reply_markup=reply_markup
+    )
+
+
+async def handle_edit_deadline_callback(
+    query,
+    context: ContextTypes.DEFAULT_TYPE,
+    task_id: int
+) -> None:
+    """Handle edit deadline button - show deadline options.
+
+    Args:
+        query: Callback query
+        context: Bot context
+        task_id: Task ID
+    """
+
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    from datetime import datetime, timedelta
+
+    today = datetime.now().date()
+    tomorrow = today + timedelta(days=1)
+    in_3_days = today + timedelta(days=3)
+    in_week = today + timedelta(days=7)
+
+    keyboard = [
+        [InlineKeyboardButton("📅 Сегодня", callback_data=f"set_deadline:{today.isoformat()}:{task_id}")],
+        [InlineKeyboardButton("📅 Завтра", callback_data=f"set_deadline:{tomorrow.isoformat()}:{task_id}")],
+        [InlineKeyboardButton("📅 Через 3 дня", callback_data=f"set_deadline:{in_3_days.isoformat()}:{task_id}")],
+        [InlineKeyboardButton("📅 Через неделю", callback_data=f"set_deadline:{in_week.isoformat()}:{task_id}")],
+        [InlineKeyboardButton("❌ Отмена", callback_data=f"edit:{task_id}")]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(
+        f"📅 **Выберите дедлайн для задачи #{task_id}:**",
+        reply_markup=reply_markup
+    )
+
+
+async def handle_edit_cancel_callback(
+    query,
+    context: ContextTypes.DEFAULT_TYPE,
+    task_id: int
+) -> None:
+    """Handle edit cancel button.
+
+    Args:
+        query: Callback query
+        context: Bot context
+        task_id: Task ID
+    """
+
+    # Clear editing context
+    context.user_data.pop("editing_task_id", None)
+    context.user_data.pop("editing_field", None)
+
+    await query.edit_message_text("✅ Редактирование отменено")
+
+
+async def handle_set_priority_callback(
+    query,
+    context: ContextTypes.DEFAULT_TYPE,
+    param: str
+) -> None:
+    """Handle set priority button - update task priority.
+
+    Args:
+        query: Callback query
+        context: Bot context
+        param: "priority:task_id" string
+    """
+
+    from src.domain.models import TaskUpdate
+
+    # Parse param: "priority:task_id"
+    parts = param.split(":")
+    if len(parts) != 2:
+        await query.edit_message_text("❌ Ошибка формата данных")
+        return
+
+    priority = int(parts[0])
+    task_id = int(parts[1])
+
+    try:
+        async with get_session() as session:
+            repo = TaskRepository(session)
+
+            # Update priority
+            task_update = TaskUpdate(priority=priority)
+            updated_task = await repo.update(task_id, task_update)
+
+        priority_names = {1: "🔴 Высокий", 2: "🟡 Средний", 3: "🟢 Низкий", 4: "⚪ Нет срочности"}
+        priority_name = priority_names.get(priority, "Неизвестно")
+
+        await query.edit_message_text(
+            f"✅ **Приоритет обновлен!**\n\n"
+            f"Задача: {updated_task.title}\n"
+            f"Новый приоритет: {priority_name}"
+        )
+
+        logger.info("task_priority_updated", task_id=task_id, priority=priority)
+
+    except Exception as e:
+        logger.error("callback_set_priority_failed", task_id=task_id, error=str(e))
+        await query.edit_message_text("❌ Ошибка при обновлении приоритета")
+
+
+async def handle_set_deadline_callback(
+    query,
+    context: ContextTypes.DEFAULT_TYPE,
+    param: str
+) -> None:
+    """Handle set deadline button - update task deadline.
+
+    Args:
+        query: Callback query
+        context: Bot context
+        param: "date:task_id" string
+    """
+
+    from src.domain.models import TaskUpdate
+    from datetime import datetime
+
+    # Parse param: "date:task_id"
+    parts = param.split(":")
+    if len(parts) != 2:
+        await query.edit_message_text("❌ Ошибка формата данных")
+        return
+
+    date_str = parts[0]
+    task_id = int(parts[1])
+
+    try:
+        # Parse date
+        deadline_date = datetime.fromisoformat(date_str)
+        # Set time to end of day
+        deadline = deadline_date.replace(hour=23, minute=59, second=59)
+
+        async with get_session() as session:
+            repo = TaskRepository(session)
+
+            # Update deadline
+            task_update = TaskUpdate(deadline=deadline)
+            updated_task = await repo.update(task_id, task_update)
+
+        deadline_text = deadline.strftime("%d.%m.%Y")
+
+        await query.edit_message_text(
+            f"✅ **Дедлайн обновлен!**\n\n"
+            f"Задача: {updated_task.title}\n"
+            f"Новый дедлайн: 📅 {deadline_text}"
+        )
+
+        logger.info("task_deadline_updated", task_id=task_id, deadline=deadline_text)
+
+    except Exception as e:
+        logger.error("callback_set_deadline_failed", task_id=task_id, error=str(e))
+        await query.edit_message_text("❌ Ошибка при обновлении дедлайна")
 
 
 async def handle_reschedule_callback(
@@ -182,23 +446,18 @@ async def handle_reschedule_callback(
     context: ContextTypes.DEFAULT_TYPE,
     task_id: int
 ) -> None:
-    """Handle 'reschedule task' button click.
-    
-    TODO: Implement task rescheduling dialog
-    
+    """Handle 'reschedule task' button click - redirect to edit deadline.
+
     Args:
         query: Callback query
         context: Bot context
         task_id: Task ID to reschedule
     """
-    
+
     logger.info("callback_reschedule_task", task_id=task_id)
-    
-    await query.edit_message_text(
-        f"📅 **Перенос задачи #{task_id}**\n\n"
-        f"Функция в разработке.\n\n"
-        f"Используйте /task чтобы создать задачу с новым дедлайном."
-    )
+
+    # Redirect to deadline editing
+    await handle_edit_deadline_callback(query, context, task_id)
 
 
 async def handle_delete_callback(

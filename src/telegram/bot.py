@@ -83,6 +83,7 @@ def create_bot_application() -> "TelegramApplication":
         help_command
     )
     from src.telegram.handlers.voice_handler import handle_voice_message
+    from src.telegram.handlers.message_handler import handle_text_message
     from src.telegram.handlers.callback_handler import handle_callback_query
     from src.telegram.handlers.error_handler import handle_error
     
@@ -97,7 +98,8 @@ def create_bot_application() -> "TelegramApplication":
     
     # Add message handlers
     app.add_handler(MessageHandler(filters.VOICE, handle_voice_message))
-    
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
+
     # Add callback query handler (inline buttons)
     app.add_handler(CallbackQueryHandler(handle_callback_query))
     

@@ -1,27 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(docker --version)",
-      "Bash(findstr \"fastapi sqlalchemy openai langgraph\")",
-      "Bash(pip install -r requirements.txt)",
-      "Bash(dir infrastructuredocker)",
-      "Bash(docker-compose up -d)",
-      "Bash(python scripts/init_db.py)",
-      "Bash(timeout /t 5)",
-      "Bash(docker logs planner_postgres --tail 20)",
-      "Bash(pip install psycopg2-binary)",
-      "Bash(docker exec planner_postgres psql -U planner -d planner -c \"CREATE EXTENSION IF NOT EXISTS vector;\")",
-      "Bash(python simple_init.py)",
-      "Bash(docker exec planner_postgres psql -U planner -d planner -c \"\\dt\")",
-      "Bash(python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000)",
-      "Bash(timeout 5)",
-      "Bash(curl -s http://localhost:8000/health)",
-      "Bash(curl -s http://localhost:8000/businesses)",
-      "Bash(curl -s http://localhost:8000/members)",
-      "Bash(git init)",
-      "Bash(git add .)",
-      "Bash(git commit -m \"Initial commit: Business Planner MVP - Phase 1 complete\n\n- Complete FastAPI backend with async PostgreSQL\n- LangGraph workflow for voice-to-task processing\n- Telegram bot with 7 commands\n- RAG system with pgvector for task estimation\n- Complete domain models and infrastructure\n- Docker setup for deployment\n- Comprehensive documentation\n\nTech stack: FastAPI, PostgreSQL, pgvector, LangGraph, OpenAI (GPT-4o-mini, Whisper)\nCost optimized: ~$9-12/month on Digital Ocean\n\nReady for deployment to Linux server (asyncpg requires Linux for production use)\")",
-      "Bash(git commit -m \"Update START_HERE.md and local settings\")"
+      "Bash(git commit -m \"Fix user_id mapping: lookup database user from Telegram ID\n\n- Added database user lookup in voice_handler.py\n- Maps Telegram ID → database user ID before task creation\n- Fixes foreign key violation error\n- Returns clear error if user not found in database\")",
+      "Bash(ssh root@164.92.225.137 \"tail -50 /root/business-planner/app.log\")",
+      "Bash(git commit -m \"Fix business name display in task creation response\n\n- Changed from generic ''Business 2'' to actual business names\n- Added business_names mapping: 1=Inventum, 2=Inventum Lab, 3=R&D, 4=Trade\n- Now shows ''🦷 Бизнес: Inventum Lab'' instead of ''🦷 Бизнес: Business 2''\")",
+      "Bash(git add -A)"
     ],
     "deny": [],
     "ask": []
