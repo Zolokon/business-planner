@@ -45,7 +45,7 @@ class VoiceTaskState(TypedDict):
     
     parsed_title: str | None
     parsed_business_id: int | None
-    parsed_deadline_text: str | None
+    parsed_deadline: str | None  # ISO datetime string
     parsed_assigned_to: str | None
     parsed_priority: int | None
     
@@ -512,7 +512,7 @@ async def process_voice_message(
         "transcript_confidence": None,
         "parsed_title": None,
         "parsed_business_id": None,
-        "parsed_deadline_text": None,
+        "parsed_deadline": None,
         "parsed_assigned_to": None,
         "parsed_priority": None,
         "similar_tasks_count": 0,

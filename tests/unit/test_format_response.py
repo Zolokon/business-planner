@@ -462,9 +462,10 @@ async def test_format_response_invalid_deadline_format():
 
     result = await format_response_node(state)
 
-    # Should not crash, just skip deadline field
+    # Should not crash, show error message for invalid format
     assert "ЗАДАЧА СОЗДАНА" in result["telegram_response"]
-    assert "Дедлайн" not in result["telegram_response"]
+    assert "Дедлайн:" in result["telegram_response"]
+    assert "ошибка формата" in result["telegram_response"]
 
 
 @pytest.mark.unit
