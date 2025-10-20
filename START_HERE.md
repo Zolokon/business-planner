@@ -98,36 +98,37 @@
 
 **Домен:** inventum.com.kz → https://inventum.com.kz (HTTPS работает!)
 
-### 🔬 Phase 5: Testing - IN PROGRESS (40%) ✅
+### 🔬 Phase 5: Testing - IN PROGRESS (65%) ✅
 
 **TESTING SETUP (обновлено 2025-10-20):**
 - ✅ pytest configuration completed
 - ✅ Test structure created (unit/integration/e2e)
-- ✅ Database fixtures setup (async support)
-- ✅ SQLite compatibility layer added
+- ✅ Database fixtures WORKING (async + StaticPool)
+- ✅ SQLite compatibility layer added (JSONB, ARRAY, Vector)
 - ✅ Mock fixtures for OpenAI and Telegram
-- ✅ 24 unit tests passing
+- ✅ **39 unit tests passing!** 🎉
 
 **TEST COVERAGE:**
 - ✅ Message formatting (`format_response_node`) - 13 tests ✅
 - ✅ Task parsing (GPT-5 Nano) - 11 tests ✅
-- 🔄 Task Repository (CRUD) - 31 tests created (fixtures need fixing)
+- ✅ Task Repository (CRUD) - 15 tests PASSING ✅ (+ 16 more created)
 - ⏳ Command handlers - not yet started
 - ⏳ Callback handlers - not yet started
 
 **KEY FILES:**
-- `tests/conftest.py` - Shared fixtures and configuration
-- `tests/unit/test_format_response.py` - Message formatting tests (13 passing)
-- `tests/unit/test_task_parser.py` - Parsing tests (11 passing)
-- `tests/unit/test_task_repository.py` - CRUD tests (31 created)
+- `tests/conftest.py` - Shared fixtures (StaticPool fix applied)
+- `tests/unit/test_format_response.py` - 13 tests PASSING
+- `tests/unit/test_task_parser.py` - 11 tests PASSING
+- `tests/unit/test_task_repository.py` - 15 tests PASSING (+ 16 need enum fixes)
 - `TESTING_GUIDE.md` - Complete testing documentation
+- `src/infrastructure/database/models.py` - SQLite compatibility added
 
 **NEXT STEPS:**
-1. Fix database fixture compatibility issues
-2. Complete TaskRepository tests
-3. Add command handler tests
-4. Set up coverage reporting
-5. Add integration tests
+1. Fix enum import issues in remaining tests
+2. Add command handler tests
+3. Set up coverage reporting
+4. Add integration tests
+5. Configure CI/CD
 
 **Bot:** @PM_laboratory_bot (fully operational!)
 
@@ -138,7 +139,7 @@ Phase 1: Core Development[██████████████████
 Phase 2: Git Setup       [████████████████████████████] 100% ✅
 Phase 3: Deployment      [████████████████████████████] 100% ✅
 Phase 4: Bug Fixes       [████████████████████████████] 100% ✅
-Phase 5: Testing         [............................] 0%
+Phase 5: Testing         [██████████████████..........] 65% 🔄
 Phase 6: Analytics       [............................] 0%
 ```
 
