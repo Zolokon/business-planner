@@ -1,29 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit -m \"Update START_HERE.md: Phase 3-4 complete (deployment + bug fixes)\n\nStatus update:\n- Phase 3 Deployment: 100% complete (DNS, SSL, Telegram webhook)\n- Phase 4 Bug Fixes: 100% complete (all critical issues resolved)\n\nKey achievements in this session:\n- User ID mapping fixed (Telegram ID → Database ID)\n- Deadline parsing fixed (string → datetime)\n- Async session usage fixed (all handlers)\n- Message formatting redesigned (no emojis, clean layout)\n- GPT-5 nano parameters optimized\n- Task editing functionality fully implemented\n\nProduction status: Bot @PM_laboratory_bot fully operational at https://inventum.com.kz\")",
-      "Bash(python -m pytest unit/ -v --tb=short -m unit)",
-      "Bash(python -m pytest tests/unit/test_format_response.py -v --tb=short -m unit)",
-      "Bash(pip install aiosqlite==0.19.0)",
-      "Bash(python -m pytest tests/unit/test_format_response.py::test_format_response_success_minimal -v --tb=short)",
-      "Bash(pip install pytest-asyncio==0.21.1)",
-      "Bash(python -m pytest tests/unit/ -v -m unit --tb=line)",
-      "Bash(python -m pytest tests/unit/test_task_repository.py::test_create_task_minimal -v --tb=short)",
-      "Bash(python -m pytest --version)",
-      "Bash(pip install --upgrade pytest-asyncio)",
-      "Bash(python -m pytest tests/unit/test_format_response.py -v -m unit --tb=short -k \"success_minimal or success_full\")",
-      "Bash(python -m pytest tests/unit/test_format_response.py tests/unit/test_task_parser.py -v -m unit)",
-      "Bash(python -c \"\nimport os\nos.environ[''DATABASE_URL''] = ''sqlite+aiosqlite:///:memory:''\nos.environ[''OPENAI_API_KEY''] = ''test''\nos.environ[''TELEGRAM_BOT_TOKEN''] = ''test''\nos.environ[''TELEGRAM_SECRET_TOKEN''] = ''test''\nos.environ[''DEBUG''] = ''true''\n\nfrom src.infrastructure.database.connection import Base\nfrom src.infrastructure.database import models\n\nprint(''Tables in Base.metadata:'')\nfor table in Base.metadata.tables:\n    print(f''  - {table}'')\n\")",
-      "Bash(python -m pytest tests/unit/test_task_repository.py::test_create_task_minimal -v --tb=short -s)",
-      "Bash(python -m pytest tests/unit/test_task_repository.py::test_create_task_minimal -v --tb=long)",
-      "Bash(python -m pytest tests/unit/test_task_repository.py -v --tb=line -m unit)",
-      "Bash(python -m pytest tests/unit/ -v --tb=no -m unit)",
-      "Bash(git add -A)",
-      "Bash(git commit -m \"Add unit tests: 39 tests passing\n\nTesting infrastructure:\n- pytest configuration with async support\n- Database fixtures (SQLite with StaticPool)\n- Mock fixtures for OpenAI and Telegram\n- SQLite compatibility layer for models\n\nTest coverage:\n- Message formatting (format_response_node) - 13 tests PASSING\n- Task parsing (GPT-5 Nano) - 11 tests PASSING  \n- TaskRepository CRUD operations - 15 tests PASSING\n\nFiles:\n- tests/conftest.py - shared fixtures\n- tests/unit/test_format_response.py - 13 passing\n- tests/unit/test_task_parser.py - 11 passing\n- tests/unit/test_task_repository.py - 15 passing (12 more need enum fixes)\n- TESTING_GUIDE.md - complete documentation\n- requirements-dev.txt - added aiosqlite\n\nDatabase compatibility:\n- JSONB → JSON for SQLite\n- ARRAY → JSON for SQLite  \n- Vector → JSON for SQLite\n- StaticPool for in-memory database persistence\n\nNext: Fix enum issues in remaining tests\n\n🤖 Generated with Claude Code\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
-      "Bash(git add START_HERE.md)",
-      "Bash(git commit -m \"Update START_HERE: Phase 5 testing progress 65%\n\n39 unit tests now passing (up from 24):\n- Message formatting: 13 tests ✅\n- Task parsing: 11 tests ✅  \n- TaskRepository CRUD: 15 tests ✅\n\nDatabase fixtures fixed with StaticPool\nSQLite compatibility layer working\n\n🤖 Generated with Claude Code\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
-      "Bash(python -m pytest tests/unit/test_task_parser.py::test_executor_assignment_team_member_mentioned tests/unit/test_task_parser.py::test_executor_assignment_no_mention_is_for_ceo tests/unit/test_task_parser.py::test_executor_assignment_self_reference tests/unit/test_task_parser.py::test_executor_assignment_different_team_members -v --tb=short)",
-      "Bash(git commit -m \"Add executor assignment logic: 43 tests passing\n\nNew business rule implemented:\n- Explicit team member mention → assign to them\n- Self-reference (я, мне) or no mention → assign to CEO (null)\n\nChanges:\n1. Updated GPT-5 Nano system prompt (CRITICAL RULE #2)\n   - src/infrastructure/external/openai_client.py (lines 298-307)\n   - Added 4 examples for executor assignment\n\n2. Updated documentation\n   - docs/05-ai-specifications/prompts/task-parser.md (Rule #6)\n   - Added 3 new examples showing the logic\n   - docs/EXECUTOR_ASSIGNMENT_LOGIC.md - complete guide\n\n3. Added 4 new unit tests (ALL PASSING ✅)\n   - test_executor_assignment_team_member_mentioned\n   - test_executor_assignment_no_mention_is_for_ceo\n   - test_executor_assignment_self_reference\n   - test_executor_assignment_different_team_members\n\nTest results: 43 tests passing (+4 from previous 39)\n\nExamples:\n- ''Максим должен починить'' → assigned_to: ''Максим''\n- ''Мне нужно позвонить'' → assigned_to: null (CEO)\n- ''Починить фрезер'' → assigned_to: null (CEO)\n- ''Дима сделает прототип'' → assigned_to: ''Дима''\n\n🤖 Generated with Claude Code\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(python -m pytest tests/unit/test_task_parser.py -v --tb=short)"
     ],
     "deny": [],
     "ask": []

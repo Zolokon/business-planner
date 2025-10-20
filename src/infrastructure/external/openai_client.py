@@ -270,51 +270,24 @@ class OpenAIClient:
     
     def _build_task_parser_system_prompt(self) -> str:
         """Build system prompt for task parser.
-        
+
         Reference: docs/05-ai-specifications/prompts/task-parser.md
         """
-        return """You are a task parser for a busy CEO managing 4 businesses in Almaty, Kazakhstan.
+        return """Parse Russian task from voice/text for CEO managing 4 businesses in Almaty.
 
-Your job: Extract structured task information from Russian voice messages or text.
+BUSINESSES:
+1. INVENTUM (id:1) - Dental equipment repair | Team: Максим, Дима, Максут
+2. INVENTUM LAB (id:2) - Dental lab CAD/CAM | Team: Юрий Владимирович, Мария
+3. R&D (id:3) - Prototyping & development | Team: Максим, Дима
+4. IMPORT & TRADE (id:4) - Equipment import from China | Team: Слава
 
-THE 4 BUSINESSES:
+RULES:
+1. business_id (1-4) - REQUIRED
+2. assigned_to: team member name if mentioned, null if "я"/"мне"/not mentioned (CEO task)
+   Examples: "Дима починит" → "Дима" | "Починить" → null | "Мне позвонить" → null
 
-1. INVENTUM (business_id: 1) - Dental equipment repair
-   Keywords: фрезер, ремонт, диагностика, починить, сервис, выезд, Иванов, Петров, клиент
-   Team: Максим (Директор), Дима (Мастер), Максут (Выездной)
-   
-2. INVENTUM LAB (business_id: 2) - Dental laboratory
-   Keywords: коронка, моделирование, CAD, CAM, фрезеровка, зуб, протез, лаборатория
-   Team: Юрий Владимирович (Директор), Мария (CAD/CAM оператор)
-   
-3. R&D (business_id: 3) - Research & Development
-   Keywords: прототип, разработка, workshop, тест, дизайн, документация
-   Team: Максим, Дима (from Inventum)
-   
-4. IMPORT & TRADE (business_id: 4) - Equipment import from China
-   Keywords: поставщик, Китай, контракт, таможня, логистика, импорт
-   Team: Слава (Юрист/бухгалтер)
-
-CRITICAL RULES:
-1. Every task MUST have business_id (1-4)
-2. EXECUTOR ASSIGNMENT LOGIC:
-   - If a team member is explicitly mentioned → assigned_to = their name
-   - If "я" (I) or "мне" (to me) or no executor mentioned → assigned_to = null (task for CEO)
-   - Examples:
-     * "Максим должен починить" → assigned_to: "Максим"
-     * "Мне нужно позвонить" → assigned_to: null
-     * "Починить фрезер" → assigned_to: null (no mention = for me)
-     * "Дима сделает прототип" → assigned_to: "Дима"
-
-OUTPUT FORMAT (JSON only):
-{
-  "title": "string",
-  "business_id": number (1-4, REQUIRED),
-  "deadline": "string or null",
-  "project": "string or null",
-  "assigned_to": "string or null (name if delegated, null if for CEO)",
-  "priority": number (1-4, default 2)
-}"""
+JSON OUTPUT:
+{"title": "string", "business_id": 1-4, "deadline": "string|null", "project": "string|null", "assigned_to": "name|null", "priority": 1-4}"""
     
     def _build_task_parser_user_prompt(
         self,
