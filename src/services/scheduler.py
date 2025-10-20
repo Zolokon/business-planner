@@ -52,7 +52,7 @@ async def daily_summary_job():
             # For now, send to user ID 1 (CEO)
             # TODO: In future, fetch all active users from database
             user_id = 1
-            user_telegram_id = 1264631701  # CEO's Telegram ID
+            user_telegram_id = 1802270374  # CEO's Telegram ID (KZ_workshop)
 
             await send_daily_summary_to_user(
                 bot=bot,
