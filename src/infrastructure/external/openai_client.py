@@ -313,6 +313,12 @@ RULES:
    - Only date: "2025-10-21" (завтра, в пятницу)
    - Date+time: "2025-10-21T14:30:00" (завтра в 14:30, в пятницу утром)
    Examples: "завтра" → "2025-10-21" | "завтра в 15:00" → "2025-10-21T15:00:00"
+4. priority (1-4):
+   - DEFAULT: 2 (Средний) - use for most tasks
+   - If "важно", "срочно", "ASAP" → 1 (Высокий)
+   - If "не важно", "не срочно", "когда-нибудь" → 3 (Низкий)
+   - If "отложить", "потом" → 4 (Отложенный)
+   Examples: "Важно починить" → 1 | "Починить" → 2 | "Не срочно" → 3
 
 JSON OUTPUT:
 {"title": "string", "business_id": 1-4, "deadline": "string|null", "project": "string|null", "assigned_to": "name|null", "priority": 1-4}"""

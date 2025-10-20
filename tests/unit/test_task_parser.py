@@ -101,28 +101,41 @@ async def test_parse_task_business_detection(mock_openai_client):
 async def test_parse_task_priority_levels(mock_openai_client):
     """Test that different priority levels are parsed correctly."""
 
-    priority_keywords = {
-        "срочно": 1,  # High
-        "важно": 1,  # High
-        "обычное": 2,  # Medium
-        "когда будет время": 3,  # Low
-        "отложить": 4  # Backlog
-    }
+    test_cases = [
+        # High priority (1)
+        ("Важно починить фрезер", 1, "важно"),
+        ("Срочно нужно починить фрезер", 1, "срочно"),
+        ("ASAP починить фрезер", 1, "ASAP"),
+
+        # Medium priority (2) - DEFAULT
+        ("Починить фрезер", 2, "no keyword - default"),
+        ("Нужно починить фрезер", 2, "neutral"),
+
+        # Low priority (3)
+        ("Не срочно починить фрезер", 3, "не срочно"),
+        ("Не важно починить фрезер", 3, "не важно"),
+        ("Когда-нибудь починить фрезер", 3, "когда-нибудь"),
+
+        # Backlog (4)
+        ("Отложить ремонт фрезера", 4, "отложить"),
+        ("Потом починить фрезер", 4, "потом"),
+    ]
 
     with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
-        for keyword, expected_priority in priority_keywords.items():
+        for transcript, expected_priority, description in test_cases:
             mock_openai_client.parse_task = AsyncMock(return_value={
-                "title": f"Задача {keyword}",
+                "title": f"Task: {description}",
                 "business_id": 1,
                 "priority": expected_priority
             })
 
             parsed = await parse_task_from_transcript(
-                transcript=f"Нужно починить фрезер {keyword}",
+                transcript=transcript,
                 user_id=1
             )
 
-            assert parsed.priority == expected_priority
+            assert parsed.priority == expected_priority, \
+                f"Expected priority {expected_priority} for: {transcript}"
 
 
 @pytest.mark.unit

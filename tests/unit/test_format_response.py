@@ -144,13 +144,13 @@ async def test_format_response_business_names():
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_format_response_priority_levels():
-    """Test all priority levels are correctly formatted."""
+    """Test all priority levels are correctly formatted (Title Case)."""
 
     priorities = {
-        1: "ВЫСОКИЙ",
-        2: "СРЕДНИЙ",
-        3: "НИЗКИЙ",
-        4: "ОТЛОЖЕННЫЙ"
+        1: "Высокий",
+        2: "Средний",
+        3: "Низкий",
+        4: "Отложенный"
     }
 
     for priority, expected_text in priorities.items():
@@ -163,7 +163,7 @@ async def test_format_response_priority_levels():
             "transcript_confidence": 0.95,
             "parsed_title": "Test task",
             "parsed_business_id": 1,
-            "parsed_deadline_text": None,
+            "parsed_deadline": None,
             "parsed_assigned_to": None,
             "parsed_priority": priority,
             "similar_tasks_count": 0,

@@ -341,10 +341,10 @@ async def format_response_node(
     from datetime import datetime
 
     business_names = {1: "Inventum", 2: "Inventum Lab", 3: "R&D", 4: "Trade"}
-    priority_names = {1: "ВЫСОКИЙ", 2: "СРЕДНИЙ", 3: "НИЗКИЙ", 4: "ОТЛОЖЕННЫЙ"}
+    priority_names = {1: "Высокий", 2: "Средний", 3: "Низкий", 4: "Отложенный"}
 
     business_name = business_names.get(state['parsed_business_id'], f"Business {state['parsed_business_id']}")
-    priority_name = priority_names.get(state.get('parsed_priority', 2), "СРЕДНИЙ")
+    priority_name = priority_names.get(state.get('parsed_priority', 2), "Средний")
 
     # Format task message (transcript sent separately by handler)
     message = f"""ЗАДАЧА СОЗДАНА
