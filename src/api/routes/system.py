@@ -114,7 +114,7 @@ async def trigger_daily_summary():
         return {"status": "error", "message": str(e)}
 
 
-@router.delete("/tasks/clear-all")
+@router.delete("/clear-all-tasks")
 async def clear_all_tasks(
     user_id: int = 1,
     session: AsyncSession = Depends(get_session)
