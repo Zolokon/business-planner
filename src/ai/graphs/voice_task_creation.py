@@ -346,8 +346,16 @@ async def format_response_node(
     if state.get("parsed_deadline"):
         # Convert deadline string to readable format
         try:
-            deadline_date = datetime.fromisoformat(state["parsed_deadline"])
-            deadline_text = deadline_date.strftime("%d.%m.%Y")
+            deadline_dt = datetime.fromisoformat(state["parsed_deadline"])
+
+            # Check if time is specified (not just date)
+            if deadline_dt.hour != 0 or deadline_dt.minute != 0:
+                # Has time component
+                deadline_text = deadline_dt.strftime("%d.%m.%Y в %H:%M")
+            else:
+                # Only date
+                deadline_text = deadline_dt.strftime("%d.%m.%Y")
+
             message += f"\nДедлайн:   {deadline_text}"
         except (ValueError, TypeError):
             pass

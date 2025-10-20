@@ -285,6 +285,10 @@ RULES:
 1. business_id (1-4) - REQUIRED
 2. assigned_to: team member name if mentioned, null if "я"/"мне"/not mentioned (CEO task)
    Examples: "Дима починит" → "Дима" | "Починить" → null | "Мне позвонить" → null
+3. deadline: ISO format with time if specified
+   - Only date: "2025-10-21" (завтра, в пятницу)
+   - Date+time: "2025-10-21T14:30:00" (завтра в 14:30, в пятницу утром)
+   Examples: "завтра" → "2025-10-21" | "завтра в 15:00" → "2025-10-21T15:00:00"
 
 JSON OUTPUT:
 {"title": "string", "business_id": 1-4, "deadline": "string|null", "project": "string|null", "assigned_to": "name|null", "priority": 1-4}"""

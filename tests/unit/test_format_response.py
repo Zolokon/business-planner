@@ -467,6 +467,65 @@ async def test_format_response_invalid_deadline_format():
 
 @pytest.mark.unit
 @pytest.mark.asyncio
+async def test_format_response_deadline_with_time():
+    """Test deadline formatting with time component."""
+
+    # Test date + time
+    state_with_time: VoiceTaskState = {
+        "audio_bytes": b"",
+        "audio_duration": 10,
+        "user_id": 1,
+        "telegram_chat_id": 123456,
+        "transcript": "Test",
+        "transcript_confidence": 0.95,
+        "parsed_title": "Test task",
+        "parsed_business_id": 1,
+        "parsed_deadline": "2025-10-21T14:30:00",  # With time
+        "parsed_assigned_to": None,
+        "parsed_priority": 2,
+        "similar_tasks_count": 0,
+        "estimated_duration": None,
+        "created_task_id": 1,
+        "telegram_response": None,
+        "error": None,
+        "error_message": None,
+        "processing_start": datetime.now(),
+        "processing_time_ms": 0
+    }
+
+    result = await format_response_node(state_with_time)
+    assert "21.10.2025 в 14:30" in result["telegram_response"]
+
+    # Test date only (no time)
+    state_date_only: VoiceTaskState = {
+        "audio_bytes": b"",
+        "audio_duration": 10,
+        "user_id": 1,
+        "telegram_chat_id": 123456,
+        "transcript": "Test",
+        "transcript_confidence": 0.95,
+        "parsed_title": "Test task",
+        "parsed_business_id": 1,
+        "parsed_deadline": "2025-10-21",  # No time
+        "parsed_assigned_to": None,
+        "parsed_priority": 2,
+        "similar_tasks_count": 0,
+        "estimated_duration": None,
+        "created_task_id": 1,
+        "telegram_response": None,
+        "error": None,
+        "error_message": None,
+        "processing_start": datetime.now(),
+        "processing_time_ms": 0
+    }
+
+    result = await format_response_node(state_date_only)
+    assert "21.10.2025" in result["telegram_response"]
+    assert "в 00:00" not in result["telegram_response"]  # Should not show midnight
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
 async def test_format_response_processing_time_calculated():
     """Test that processing time is calculated correctly."""
 
