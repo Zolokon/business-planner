@@ -133,7 +133,6 @@ class OpenAIClient:
                     {"role": "user", "content": user_prompt}
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.1,  # Low for consistency
                 max_completion_tokens=500
             )
             
@@ -199,7 +198,6 @@ class OpenAIClient:
                     },
                     {"role": "user", "content": context}
                 ],
-                temperature=0.3,  # Slightly higher than parsing
                 max_completion_tokens=10  # Just a number!
             )
             
