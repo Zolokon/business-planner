@@ -45,13 +45,14 @@ async def test_format_response_success_minimal():
 
     result = await format_response_node(state)
 
-    # Check response exists
+    # Check response exists (transcript now sent separately)
     assert result["telegram_response"] is not None
-    assert "ВЫ СКАЗАЛИ:" in result["telegram_response"]
-    assert "Починить фрезер" in result["telegram_response"]  # In transcript
     assert "ЗАДАЧА СОЗДАНА" in result["telegram_response"]
+    assert "Починить фрезер" in result["telegram_response"]  # Task title
     assert "Inventum" in result["telegram_response"]  # Business name
     assert "СРЕДНИЙ" in result["telegram_response"]  # Priority
+    # Transcript should be in state (sent separately by handler)
+    assert result.get("transcript") == "Починить фрезер"
 
 
 @pytest.mark.unit
@@ -85,9 +86,7 @@ async def test_format_response_success_full_data():
 
     response = result["telegram_response"]
 
-    # Check all fields present
-    assert "ВЫ СКАЗАЛИ:" in response
-    assert "Починить фрезер для Иванова до завтра" in response  # Full transcript
+    # Check all fields present (transcript now sent separately)
     assert "ЗАДАЧА СОЗДАНА" in response
     assert "Починить фрезер для Иванова" in response  # Task title
     assert "Inventum" in response
@@ -96,6 +95,8 @@ async def test_format_response_success_full_data():
     assert "Максим" in response  # Assigned to
     assert "2 ч" in response  # Time estimation
     assert "высокая точность" in response  # Confidence (>= 3 similar tasks)
+    # Transcript should be in state (sent separately by handler)
+    assert result.get("transcript") == "Починить фрезер для Иванова до завтра"
 
 
 @pytest.mark.unit

@@ -116,7 +116,13 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
         finally:
             await session.close()
         
-        # Send response
+        # First: Send transcript (what user said) as separate message
+        transcript = result.get("transcript")
+        if transcript:
+            transcript_message = f'ВЫ СКАЗАЛИ:\n"{transcript}"'
+            await update.message.reply_text(transcript_message)
+
+        # Second: Send task response
         response = result.get("telegram_response", "[ОШИБКА] Ошибка обработки")
 
         # Add inline buttons if task created successfully
