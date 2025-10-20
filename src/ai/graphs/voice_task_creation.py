@@ -373,7 +373,7 @@ async def format_response_node(
             time_str = f"{mins} мин"
 
         confidence = "(высокая точность)" if state["similar_tasks_count"] >= 3 else "(оценка)"
-        message += f"\nВремя:     ~{time_str} {confidence}"
+        message += f"\nВремя:     {time_str} {confidence}"
     
     # Calculate processing time
     processing_time = int((datetime.now() - state["processing_start"]).total_seconds() * 1000)
