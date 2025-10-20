@@ -137,9 +137,11 @@ class OpenAIClient:
             )
             
             duration_ms = int((time.time() - start_time) * 1000)
-            
+
             # Parse JSON response
-            parsed_data = json.loads(response.choices[0].message.content)
+            raw_content = response.choices[0].message.content
+            logger.debug("gpt_raw_response", content=raw_content[:200])  # First 200 chars
+            parsed_data = json.loads(raw_content)
             
             # Log API call
             log_ai_api_call(
