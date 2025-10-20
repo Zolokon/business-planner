@@ -295,11 +295,17 @@ BUSINESSES:
    Keywords: поставщик, Китай, контракт, таможня, импорт, логистика
    Team: Слава
 
-CRITICAL RULE - Location Priority:
-- "мастерская" mentioned → ALWAYS id:1 (Inventum repair)
-- "лаборатория" mentioned → ALWAYS id:2 (Inventum Lab)
-- "workshop" mentioned → ALWAYS id:3 (R&D)
-If no location mentioned, use keywords.
+CRITICAL RULES - Business Detection Priority:
+1. Location mentioned:
+   - "мастерская" → ALWAYS id:1 (Inventum repair)
+   - "лаборатория" → ALWAYS id:2 (Inventum Lab)
+   - "workshop" → ALWAYS id:3 (R&D)
+
+2. Team member mentioned (Максим/Дима):
+   - If R&D keywords (прототип, плата, разработка, workshop) → id:3 (R&D)
+   - Otherwise → id:1 (Inventum repair)
+
+3. If no location/team, use keywords to detect business.
 
 RULES:
 1. business_id (1-4) - REQUIRED

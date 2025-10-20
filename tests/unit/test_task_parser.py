@@ -477,3 +477,104 @@ async def test_executor_assignment_different_team_members(mock_openai_client):
             )
 
             assert parsed.assigned_to == member_name
+
+
+# ============================================================================
+# Business Detection: Максим/Дима Priority Rule Tests
+# ============================================================================
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_business_detection_maxim_dima_repair_by_default(mock_openai_client):
+    """Test that Максим/Дима without R&D keywords → Inventum (id:1)."""
+
+    test_cases = [
+        ("Максим должен починить фрезер", "repair task"),
+        ("Дима проведет диагностику оборудования", "diagnostics task"),
+        ("Максим выедет к клиенту завтра", "client visit"),
+        ("Дима должен проверить работу установки", "equipment check"),
+    ]
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        for transcript, description in test_cases:
+            # Mock: GPT should assign to Inventum (id:1) based on priority rule
+            mock_openai_client.parse_task = AsyncMock(return_value={
+                "title": description,
+                "business_id": 1,  # Inventum repair
+                "assigned_to": "Максим" if "Максим" in transcript else "Дима",
+                "priority": 2
+            })
+
+            parsed = await parse_task_from_transcript(
+                transcript=transcript,
+                user_id=1
+            )
+
+            assert parsed.business_id == 1, f"Expected Inventum (id:1) for: {transcript}"
+            assert parsed.assigned_to in ["Максим", "Дима"]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_business_detection_maxim_dima_with_rnd_keywords(mock_openai_client):
+    """Test that Максим/Дима WITH R&D keywords → R&D (id:3)."""
+
+    test_cases = [
+        ("Максим должен сделать прототип корпуса", "prototype"),
+        ("Дима соберет плату управления в workshop", "electronics assembly"),
+        ("Максим протестирует новую разработку", "development test"),
+        ("Дима должен собрать электронику для нового устройства", "electronics"),
+    ]
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        for transcript, description in test_cases:
+            # Mock: GPT should assign to R&D (id:3) when R&D keywords present
+            mock_openai_client.parse_task = AsyncMock(return_value={
+                "title": description,
+                "business_id": 3,  # R&D
+                "assigned_to": "Максим" if "Максим" in transcript else "Дима",
+                "priority": 2
+            })
+
+            parsed = await parse_task_from_transcript(
+                transcript=transcript,
+                user_id=1
+            )
+
+            assert parsed.business_id == 3, f"Expected R&D (id:3) for: {transcript}"
+            assert parsed.assigned_to in ["Максим", "Дима"]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_business_detection_location_overrides_team_rule(mock_openai_client):
+    """Test that location mention has higher priority than team member rule."""
+
+    test_cases = [
+        # Location: мастерская → ALWAYS Inventum (id:1)
+        ("Максим должен сделать прототип для мастерской", 1, "location override: мастерская"),
+
+        # Location: workshop → ALWAYS R&D (id:3)
+        ("Максим должен починить фрезер в workshop", 3, "location override: workshop"),
+
+        # Location: лаборатория → ALWAYS Inventum Lab (id:2)
+        ("Дима доставит материалы в лабораторию", 2, "location override: лаборатория"),
+    ]
+
+    with patch('src.ai.parsers.task_parser.openai_client', mock_openai_client):
+        for transcript, expected_business_id, description in test_cases:
+            # Mock: GPT should prioritize location over team member
+            mock_openai_client.parse_task = AsyncMock(return_value={
+                "title": description,
+                "business_id": expected_business_id,
+                "assigned_to": "Максим" if "Максим" in transcript else "Дима",
+                "priority": 2
+            })
+
+            parsed = await parse_task_from_transcript(
+                transcript=transcript,
+                user_id=1
+            )
+
+            assert parsed.business_id == expected_business_id, \
+                f"Expected business_id={expected_business_id} for: {transcript}"
