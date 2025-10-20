@@ -92,7 +92,7 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
                     username=user.username
                 )
                 await update.message.reply_text(
-                    "❌ Пользователь не найден в базе данных.\n"
+                    "[ОШИБКА] Пользователь не найден в базе данных.\n"
                     "Пожалуйста, отправьте команду /start для регистрации."
                 )
                 return
@@ -117,27 +117,27 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
             await session.close()
         
         # Send response
-        response = result.get("telegram_response", "❌ Ошибка обработки")
-        
+        response = result.get("telegram_response", "[ОШИБКА] Ошибка обработки")
+
         # Add inline buttons if task created successfully
         if result.get("created_task_id"):
             from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-            
+
             task_id = result["created_task_id"]
-            
+
             keyboard = [
                 [
-                    InlineKeyboardButton("✅ Завершить", callback_data=f"complete:{task_id}"),
-                    InlineKeyboardButton("✏️ Изменить", callback_data=f"edit:{task_id}")
+                    InlineKeyboardButton("Завершить", callback_data=f"complete:{task_id}"),
+                    InlineKeyboardButton("Изменить", callback_data=f"edit:{task_id}")
                 ],
                 [
-                    InlineKeyboardButton("📅 Перенести", callback_data=f"reschedule:{task_id}"),
-                    InlineKeyboardButton("🗑️ Удалить", callback_data=f"delete:{task_id}")
+                    InlineKeyboardButton("Перенести", callback_data=f"reschedule:{task_id}"),
+                    InlineKeyboardButton("Удалить", callback_data=f"delete:{task_id}")
                 ]
             ]
-            
+
             reply_markup = InlineKeyboardMarkup(keyboard)
-            
+
             await update.message.reply_text(
                 response,
                 reply_markup=reply_markup
@@ -162,7 +162,7 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
         )
         
         await update.message.reply_text(
-            "❌ Произошла ошибка при обработке голосового сообщения.\n"
+            "[ОШИБКА] Произошла ошибка при обработке голосового сообщения.\n"
             "Попробуйте еще раз или напишите задачу текстом через /task"
         )
 

@@ -129,54 +129,57 @@ async def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
         if not tasks:
             await update.message.reply_text(
-                "✅ На сегодня задач нет!\n\n"
-                "Отправь голосовое сообщение, чтобы создать задачу."
+                "На сегодня задач нет.\n\n"
+                "Отправьте голосовое сообщение, чтобы создать задачу."
             )
             return
-        
+
         # Group by priority
-        priority_emoji = {1: "🔴", 2: "🟠", 3: "🟡", 4: "⚪"}
-        priority_names = {1: "DO NOW", 2: "Важные", 3: "Обычные", 4: "Backlog"}
-        business_emoji = {1: "🔧", 2: "🦷", 3: "🔬", 4: "💼"}
-        
+        priority_names = {1: "ВЫСОКИЙ", 2: "СРЕДНИЙ", 3: "НИЗКИЙ", 4: "ОТЛОЖЕННЫЙ"}
+        business_names = {1: "Inventum", 2: "Inventum Lab", 3: "R&D", 4: "Trade"}
+
         tasks_by_priority = {}
         for task in tasks:
             if task.priority not in tasks_by_priority:
                 tasks_by_priority[task.priority] = []
             tasks_by_priority[task.priority].append(task)
-        
-        # Format message
-        message = f"📋 **Задачи на сегодня** ({len(tasks)} шт.)\n\n"
-        
+
+        # Format message - clean, structured
+        message = f"ЗАДАЧИ НА СЕГОДНЯ ({len(tasks)})\n"
+        message += "=" * 40 + "\n\n"
+
         for priority in sorted(tasks_by_priority.keys()):
             priority_tasks = tasks_by_priority[priority]
-            message += f"{priority_emoji[priority]} **{priority_names[priority]}** ({len(priority_tasks)})\n"
-            
+            message += f"[{priority_names[priority]}] ({len(priority_tasks)})\n"
+            message += "-" * 40 + "\n"
+
             for task in priority_tasks[:5]:  # Max 5 per priority
-                biz_emoji = business_emoji.get(task.business_id, "📋")
-                message += f"{biz_emoji} {task.title}\n"
-                
+                business_name = business_names.get(task.business_id, f"Business {task.business_id}")
+
+                message += f"\n{task.title}\n"
+                message += f"  Бизнес: {business_name}"
+
                 if task.estimated_duration:
                     hours = task.estimated_duration // 60
                     mins = task.estimated_duration % 60
                     time_str = f"{hours}ч {mins}м" if hours > 0 else f"{mins}м"
-                    message += f"   ⏱️ ~{time_str}"
+                    message += f" | Время: ~{time_str}"
 
                 if task.assigned_to:
-                    message += f" | 👤 {task.assigned_to}"  # TODO: Show member name
+                    message += f" | ID: {task.assigned_to}"
 
                 message += "\n"
-            
+
             message += "\n"
         
         # Add action buttons
         keyboard = [
             [
-                InlineKeyboardButton("✅ Завершить задачу", callback_data="complete_prompt"),
-                InlineKeyboardButton("➕ Новая задача", callback_data="new_task")
+                InlineKeyboardButton("Завершить задачу", callback_data="complete_prompt"),
+                InlineKeyboardButton("Новая задача", callback_data="new_task")
             ],
             [
-                InlineKeyboardButton("📅 На неделю", callback_data="week")
+                InlineKeyboardButton("На неделю", callback_data="week")
             ]
         ]
         

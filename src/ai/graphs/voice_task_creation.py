@@ -314,33 +314,31 @@ async def format_response_node(
     # If error, format error message
     if state.get("error"):
         error_messages = {
-            "TranscriptionFailed": "🎤 Не удалось распознать голос. Попробуйте еще раз.",
-            "ParsingFailed": "❌ Не удалось понять задачу. Уточните, пожалуйста.",
-            "TaskCreationFailed": "❌ Ошибка при создании задачи. Попробуйте позже."
+            "TranscriptionFailed": "[ОШИБКА] Не удалось распознать голос. Попробуйте еще раз.",
+            "ParsingFailed": "[ОШИБКА] Не удалось понять задачу. Уточните, пожалуйста.",
+            "TaskCreationFailed": "[ОШИБКА] Ошибка при создании задачи. Попробуйте позже."
         }
 
         message = error_messages.get(
             state["error"],
-            f"❌ Произошла ошибка: {state.get('error_message', 'Неизвестная ошибка')}"
+            f"[ОШИБКА] Произошла ошибка: {state.get('error_message', 'Неизвестная ошибка')}"
         )
 
         return {**state, "telegram_response": message}
 
-    # Success message - get business name from database
-    business_emoji = {1: "🔧", 2: "🦷", 3: "🔬", 4: "💼"}
+    # Success message - clean formatting without emojis
     business_names = {1: "Inventum", 2: "Inventum Lab", 3: "R&D", 4: "Trade"}
+    priority_names = {1: "ВЫСОКИЙ", 2: "СРЕДНИЙ", 3: "НИЗКИЙ", 4: "ОТЛОЖЕННЫЙ"}
 
     business_name = business_names.get(state['parsed_business_id'], f"Business {state['parsed_business_id']}")
+    priority_name = priority_names.get(state.get('parsed_priority', 2), "СРЕДНИЙ")
 
-    message = f"""✅ Создал задачу:
+    message = f"""ЗАДАЧА СОЗДАНА
 
 {state['parsed_title']}
 
-{business_emoji.get(state['parsed_business_id'], '📋')} Бизнес: {business_name}
-"""
-    
-    if state.get("parsed_assigned_to"):
-        message += f"👤 Кому: {state['parsed_assigned_to']}\n"
+Бизнес:    {business_name}
+Приоритет: {priority_name}"""
 
     if state.get("parsed_deadline"):
         # Convert deadline string to readable format
@@ -348,24 +346,24 @@ async def format_response_node(
         try:
             deadline_date = datetime.fromisoformat(state["parsed_deadline"])
             deadline_text = deadline_date.strftime("%d.%m.%Y")
-            message += f"📅 {deadline_text}\n"
+            message += f"\nДедлайн:   {deadline_text}"
         except (ValueError, TypeError):
             pass
-    
+
+    if state.get("parsed_assigned_to"):
+        message += f"\nИсполнитель: {state['parsed_assigned_to']}"
+
     if state.get("estimated_duration"):
         hours = state["estimated_duration"] // 60
         mins = state["estimated_duration"] % 60
-        
+
         if hours > 0:
             time_str = f"{hours} ч {mins} мин" if mins > 0 else f"{hours} ч"
         else:
             time_str = f"{mins} мин"
-        
-        confidence_emoji = "🎯" if state["similar_tasks_count"] >= 3 else "📊"
-        message += f"⏱️ {confidence_emoji} ~{time_str}"
-        
-        if state["similar_tasks_count"] > 0:
-            message += f" (на основе {state['similar_tasks_count']} похожих задач)"
+
+        confidence = "(высокая точность)" if state["similar_tasks_count"] >= 3 else "(оценка)"
+        message += f"\nВремя:     ~{time_str} {confidence}"
     
     # Calculate processing time
     processing_time = int((datetime.now() - state["processing_start"]).total_seconds() * 1000)
