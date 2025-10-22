@@ -192,7 +192,7 @@ async def generate_daily_summary(
         )
 
         # Filter out completed tasks
-        tasks = [t for t in tasks if t.status != "completed"]
+        tasks = [t for t in tasks if t.status != "done"]
 
         # Filter: relevant tasks only (today/tomorrow, not backlog)
         relevant_tasks = [

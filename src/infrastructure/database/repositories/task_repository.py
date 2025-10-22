@@ -239,13 +239,13 @@ class TaskRepository:
         
         if task.status == "done":
             raise ValueError("Task already completed")
-        
+
         # Update in database
         result = await self.session.execute(
             select(TaskORM).where(TaskORM.id == task_id)
         )
         task_orm = result.scalar_one()
-        
+
         task_orm.status = "done"
         task_orm.actual_duration = actual_duration
         task_orm.completed_at = func.now()
