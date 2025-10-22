@@ -1,208 +1,69 @@
-# 🚀 START HERE - Business Planner Project
+# 🚀 START HERE - Business Planner
 
 > **For New AI Sessions**: Read this FIRST to understand the project context
-> **Last Updated**: 2025-10-20
-> **Current Phase**: Phase 5 - Testing in Progress ✅
+> **Last Updated**: 2025-10-22
+> **Current Phase**: Production + Optimization 🟢
 
 ---
 
 ## ⚡ Quick Context (30 seconds)
 
-**What**: Voice-first task manager for entrepreneur with 4 businesses via Telegram bot  
-**Tech**: FastAPI + LangGraph + PostgreSQL + GPT-5 Nano + Digital Ocean  
-**Cost**: $9-12/month (AI + infrastructure)  
-**Status**: Foundation complete, ready for specifications  
-**Approach**: AI-First Development (specs before code)
+**What**: Voice-first task manager for CEO managing 4 businesses via Telegram bot
+**User**: Константин (Almaty, Kazakhstan) - manages Inventum, Inventum Lab, R&D, Import & Trade
+**Tech Stack**: FastAPI + LangGraph + PostgreSQL + GPT-5 Nano + Digital Ocean
+**Cost**: $9-12/month (AI + infrastructure)
+**Status**: ✅ In production at https://inventum.com.kz
+**Bot**: @PM_laboratory_bot (fully operational)
 
 ---
 
-## 📍 Current Status
+## 📍 Production Status
 
-### ✅ Phase 0: Specifications - COMPLETE! 🎉
-- [x] Week 1: Core Architecture (100%)
-  - [x] .cursorrules (566 lines)
-  - [x] 7 ADR documents (~5,650 lines)
-  - [x] Database Design (6 tables, 32 indexes)
-  - [x] Domain Model (DDD complete)
-- [x] Week 2: API & Contracts (100%)
-  - [x] OpenAPI 3.0 specification
-  - [x] Telegram commands (7 commands)
-  - [x] Pydantic models (15+ models)
-  - [x] LangGraph workflows (4 workflows)
-  - [x] AI Prompts library
-- [x] Week 3: Infrastructure (100%)
-  - [x] Digital Ocean architecture
-  - [x] Terraform configuration
-  - [x] Docker setup
-  - [x] CI/CD pipeline (GitHub Actions)
-  - [x] Monitoring strategy
-  - [x] Security & secrets
-  - [x] Testing strategy
+### Infrastructure
+- **Server**: Digital Ocean Droplet (164.92.225.137)
+- **Domain**: https://inventum.com.kz (SSL via Let's Encrypt)
+- **Database**: PostgreSQL 15 + pgvector extension
+- **Cache**: Redis 7
+- **Process**: systemd service (auto-restart)
+- **Web Server**: Nginx reverse proxy
+- **Telegram**: Webhook configured and working
 
-### ✅ Phase 1: Core Development - COMPLETE! (100%) 🎉
-- [x] Week 1-2: Project Bootstrap (100%)
-  - [x] Configuration & dependencies
-  - [x] Project structure (src/, tests/)
-  - [x] Database connection & ORM
-  - [x] Domain models (Pydantic)
-  - [x] Logging with debug toggle
-- [x] Week 3-4: Voice Processing Pipeline (100%)
-  - [x] OpenAI client (Whisper, GPT-5 Nano)
-  - [x] RAG system (embeddings + retriever)
-  - [x] Task parser (GPT-5 Nano)
-  - [x] LangGraph voice-to-task workflow
-  - [x] FastAPI routes (tasks, system)
-- [x] Week 5-6: Telegram Bot (100%) ✅ NEW!
-  - [x] Bot setup & webhook handler
-  - [x] Command handlers (/start, /today, /week, /task, /complete, /weekly, /help)
-  - [x] Voice message integration (LangGraph)
-  - [x] Inline button callbacks
-  - [x] Error handler (global)
-  - [x] Repository updates (date queries)
+### Application Status
+- ✅ Voice message processing (Whisper → GPT-5 Nano → Task)
+- ✅ Task management (/start, /today, /week, /task, /complete)
+- ✅ Inline callbacks (Edit, Delete, Complete)
+- ✅ Daily summary (8 AM Almaty time)
+- ✅ Evening summary (7 PM Almaty time) - NEW! 🎉
+- ✅ Weekly analytics (Friday 5 PM)
+- ✅ Smart priority detection
+- ✅ Business context isolation (4 businesses)
 
-### ✅ Phase 3: Deployment - COMPLETE! (100%) 🎉
-
-**PRODUCTION STATUS (обновлено 2025-10-20):**
-- ✅ Код готов (108 файлов, 34,257 строк)
-- ✅ Git инициализирован, первый коммит сделан
-- ✅ GitHub репозиторий создан: https://github.com/Zolokon/business-planner.git
-- ✅ Развернуто на Digital Ocean (164.92.225.137)
-- ✅ PostgreSQL + Redis в Docker контейнерах
-- ✅ База данных создана с правильной схемой (SQLAlchemy models)
-- ✅ Приложение запущено через systemd service (автоперезапуск)
-- ✅ Database health check исправлен
-- ✅ Nginx reverse proxy настроен
-- ✅ Firewall настроен (порты 80, 443 открыты)
-- ✅ DNS обновлен (inventum.com.kz → 164.92.225.137)
-- ✅ SSL сертификат получен (Let's Encrypt)
-- ✅ Telegram webhook настроен (https://inventum.com.kz/webhook/telegram)
-- ✅ Бот работает: @PM_laboratory_bot
-
-**КРИТИЧЕСКИЕ ИСПРАВЛЕНИЯ В ЭТОЙ СЕССИИ:**
-- ✅ User ID mapping: Telegram ID → Database user ID (во всех handlers)
-- ✅ Deadline parsing: строка даты → datetime объект
-- ✅ Async session usage: исправлено во всех командах и callbacks
-- ✅ Оформление сообщений: убраны эмодзи, добавлен приоритет
-- ✅ GPT-5 nano параметры: оптимизированы (без temperature/max_completion_tokens)
-- ✅ Функция редактирования задач: полностью реализована
-
-**Production Infrastructure:**
-- Сервер: Digital Ocean Droplet (164.92.225.137)
-- База: PostgreSQL 15 + pgvector extension
-- Кэш: Redis 7
-- Память: 1GB RAM + 2GB swap (решена проблема OOM)
-- Процесс: systemd service (автоперезапуск при падении)
-- Web-сервер: Nginx (reverse proxy настроен ✅)
-- SSL: Let's Encrypt (https://inventum.com.kz) ✅
-- Telegram: Webhook работает ✅
-
-**Домен:** inventum.com.kz → https://inventum.com.kz (HTTPS работает!)
-
-### 🔬 Phase 5: Testing - IN PROGRESS (65%) ✅
-
-**TESTING SETUP (обновлено 2025-10-20):**
-- ✅ pytest configuration completed
-- ✅ Test structure created (unit/integration/e2e)
-- ✅ Database fixtures WORKING (async + StaticPool)
-- ✅ SQLite compatibility layer added (JSONB, ARRAY, Vector)
-- ✅ Mock fixtures for OpenAI and Telegram
-- ✅ **39 unit tests passing!** 🎉
-
-**TEST COVERAGE:**
-- ✅ Message formatting (`format_response_node`) - 13 tests ✅
-- ✅ Task parsing (GPT-5 Nano) - 11 tests ✅
-- ✅ Task Repository (CRUD) - 15 tests PASSING ✅ (+ 16 more created)
-- ⏳ Command handlers - not yet started
-- ⏳ Callback handlers - not yet started
-
-**KEY FILES:**
-- `tests/conftest.py` - Shared fixtures (StaticPool fix applied)
-- `tests/unit/test_format_response.py` - 13 tests PASSING
-- `tests/unit/test_task_parser.py` - 11 tests PASSING
-- `tests/unit/test_task_repository.py` - 15 tests PASSING (+ 16 need enum fixes)
-- `TESTING_GUIDE.md` - Complete testing documentation
-- `src/infrastructure/database/models.py` - SQLite compatibility added
-
-**NEXT STEPS:**
-1. Fix enum import issues in remaining tests
-2. Add command handler tests
-3. Set up coverage reporting
-4. Add integration tests
-5. Configure CI/CD
-
-**Bot:** @PM_laboratory_bot (fully operational!)
-
-### 📊 Progress
-```
-Phase 0: Specifications  [████████████████████████████] 100% ✅
-Phase 1: Core Development[████████████████████████████] 100% ✅
-Phase 2: Git Setup       [████████████████████████████] 100% ✅
-Phase 3: Deployment      [████████████████████████████] 100% ✅
-Phase 4: Bug Fixes       [████████████████████████████] 100% ✅
-Phase 5: Testing         [██████████████████..........] 65% 🔄
-Phase 6: Analytics       [............................] 0%
-```
-
-**Следующая фаза:** Тестирование и аналитика (Phase 5-6)
+### Monitoring
+- **Logs**: `/root/business-planner/app.log`
+- **Systemd**: `journalctl -u business-planner -f`
+- **Health**: `curl https://inventum.com.kz/health`
 
 ---
 
-## 🗂️ Project Structure
+## 🏗️ Architecture Overview
 
-```
-planer_4/
-├── START_HERE.md              ← YOU ARE HERE
-├── README.md                  ← Project overview
-├── PROJECT_STRUCTURE.md       ← Complete structure guide
-│
-├── planning/                  ← 📋 PROJECT MANAGEMENT
-│   ├── PROJECT_PLAN.md        ← MASTER PLAN (read this!)
-│   ├── SPEC_CHECKLIST.md      ← Detailed specs (28 areas)
-│   ├── STATUS.md              ← Current status
-│   └── GETTING_STARTED.md     ← Quick start guide
-│
-├── docs/                      ← 📚 TECHNICAL DOCS
-│   ├── 00-project-brief.md    ← Original vision
-│   └── [8 sections: architecture, database, API, etc.]
-│
-├── infrastructure/            ← 🌊 INFRASTRUCTURE
-│   ├── terraform/            ← IaC (Digital Ocean Droplet)
-│   ├── docker/               ← Docker Compose setup
-│   └── github/               ← CI/CD workflows
-│
-├── src/                       ← 💻 SOURCE CODE (not created yet)
-├── tests/                     ← ✅ TESTS (not created yet)
-└── scripts/                   ← 🛠️ HELPER SCRIPTS
-```
-
----
-
-## 🔑 Key Decisions Made
-
-### Technology Stack
-| Component | Choice | Why |
-|-----------|--------|-----|
-| **AI Parsing** | GPT-5 Nano | $0.05/1M tokens, <1 sec, 400K context |
-| **AI Analytics** | GPT-5 | Deep reasoning for weekly insights |
-| **Voice** | OpenAI Whisper | Best speech-to-text for Russian |
-| **Backend** | FastAPI | Fast, async, type-safe |
+### Tech Stack
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Voice** | OpenAI Whisper | Russian speech-to-text |
+| **AI Parsing** | GPT-5 Nano | Fast task extraction (~0.85s) |
+| **AI Analytics** | GPT-5 | Weekly insights & analysis |
+| **Backend** | FastAPI | Async REST API |
 | **Orchestration** | LangGraph | AI workflow management |
 | **Database** | PostgreSQL 15 + pgvector | Vector search for RAG |
-| **Cache** | Redis 7 | Session & performance |
-| **Deployment** | DO Droplet $6/month | 75% cheaper than managed |
-| **Container** | Docker Compose | All-in-one simplicity |
-
-### Architecture Principles
-1. **Voice-First**: Optimize for speech input
-2. **Business Isolation**: Each of 4 businesses is separate context
-3. **RAG Learning**: Self-improving time estimates
-4. **AI-First Dev**: Complete specs before coding
-5. **Cost-Effective**: ~$9-12/month total
+| **Cache** | Redis 7 | Session management |
+| **Deployment** | Docker + systemd | Container orchestration |
+| **Interface** | Telegram Bot API | User interaction |
 
 ### Cost Breakdown (Monthly)
-- Voice transcription: $1-2
-- GPT-5 Nano (parsing): $0.30-0.50
-- GPT-5 (analytics): $1-2
+- Voice transcription (Whisper): $1-2
+- Task parsing (GPT-5 Nano): $0.30-0.50
+- Weekly analytics (GPT-5): $1-2
 - Embeddings: $0.50
 - **AI Total**: $3-5/month
 - **Droplet**: $6/month
@@ -210,499 +71,417 @@ planer_4/
 
 ---
 
-## 📋 Essential Reading (in order)
+## 👥 Business Context
 
-1. **This File** (START_HERE.md) ← You are here
-2. **planning/PROJECT_PLAN.md** - Master plan with timeline
-3. **planning/SPEC_CHECKLIST.md** - What needs to be specified
-4. **docs/00-project-brief.md** - Complete vision and requirements
-5. **PROJECT_STRUCTURE.md** - Understanding file organization
+### The 4 Businesses
 
-**Time to read**: ~30 minutes total
+**1. INVENTUM (id: 1)** - Dental equipment repair
+- Team: Максим (Director), Дима (Master), Максут (Field Service)
+- Keywords: фрезер, ремонт, диагностика, сервис
+- Location: мастерская
 
----
+**2. INVENTUM LAB (id: 2)** - Dental laboratory (CAD/CAM)
+- Team: Юрий Владимирович (Director), Мария (CAD/CAM Operator)
+- Keywords: коронка, моделирование, CAD, CAM, протез
+- Location: лаборатория
 
-## 🎯 Immediate Next Task
+**3. R&D (id: 3)** - Prototype development
+- Team: Максим, Дима (cross-functional from Inventum)
+- Keywords: разработка (explicit mention required)
+- Location: workshop
 
-### Task: Create `.cursorrules`
+**4. IMPORT & TRADE (id: 4)** - Equipment import from China
+- Team: Слава (Legal/Accounting)
+- Keywords: поставщик, Китай, контракт, таможня, импорт
 
-**Location**: Project root (create as `.cursorrules`)
+**Cross-Business Team**:
+- Константин (CEO) - manages all 4 businesses
+- Лиза (Marketing/SMM) - works across all businesses
 
-**Purpose**: AI coding rules for consistent code generation
-
-**Content Should Include**:
-1. **Python Style**
-   - PEP 8 compliance
-   - Black formatter (line length: 100)
-   - Type hints mandatory
-   - Docstrings (Google style)
-
-2. **Architecture Patterns**
-   - LangGraph for AI workflows
-   - Repository pattern for database
-   - Domain-Driven Design (DDD)
-   - Async/await everywhere
-
-3. **Testing Requirements**
-   - Pytest framework
-   - 80%+ coverage
-   - Unit + Integration + E2E
-
-4. **Logging Strategy**
-   - Structured JSON logging
-   - Debug mode toggle (user preference [[memory:7583598]])
-   - No print() in production
-
-5. **AI Prompting Guidelines**
-   - Always include business context
-   - Use examples in prompts
-   - Handle edge cases
-
-**Reference**: See `planning/SPEC_CHECKLIST.md` section 1.1 for details
-
-**Estimated Time**: 1-2 hours
+**Total Team**: 8 people
 
 ---
 
-## 🧠 Important Context for AI
-
-### The User
-- **Role**: Entrepreneur managing 4 businesses in Almaty, Kazakhstan
-- **Pain**: Too many tasks, context switching, manual logging
-- **Solution**: Voice → AI → Structured tasks
-- **Preference**: Serial output only in debug mode [[memory:7583598]]
-
-### The 4 Businesses & Team
-
-**Leadership:**
-- **Константин** - CEO (управляет всеми 4 бизнесами)
-- **Лиза** - Маркетинг/SMM (работает со всеми бизнесами)
-
-**By Business:**
-
-1. **Inventum** - Dental equipment repair
-   - Максим - Директор (также участвует в R&D)
-   - Дима - Мастер (также участвует в R&D)
-   - Максут - Выездной мастер
-
-2. **Inventum Lab** - Dental laboratory
-   - Юрий Владимирович - Директор
-   - Мария - CAD/CAM оператор
-
-3. **R&D** - Prototype development
-   - Максим (из Inventum)
-   - Дима (из Inventum)
-   - Workshop location
-
-4. **Import & Trade** - Equipment from China
-   - Слава - Юрист/бухгалтер
-
-**Total Team Size**: 8 people (2 cross-business, 2 cross-functional)
-
-**📋 Full Team Details**: See `docs/TEAM.md` for complete team structure, roles, and task assignment logic
-
-**Critical**: Each business context must be ISOLATED. RAG search must filter by business_id.
-
-### Core User Flow
-```
-Voice Message (Russian)
-    ↓
-Whisper API (transcribe)
-    ↓
-GPT-5 Nano (parse: title, business, deadline, project)
-    ↓
-RAG (find similar past tasks, estimate time)
-    ↓
-Create Task in DB with embedding
-    ↓
-Telegram Response (confirmation)
-```
-
-### Key Business Rules
-- Every task MUST have a business context
-- Projects are optional (user creates manually)
-- Deadlines: "завтра утром" → next workday 09:00
-- Weekend → auto-adjust to Monday
-- Default deadline: +7 days if not specified
-- Time estimation: Learn from actual_duration feedback
-
----
-
-## 💡 Development Approach
-
-### AI-First Development Process
+## 🔄 Core User Flow
 
 ```
-┌─────────────────────────────────────┐
-│  1. SPECIFICATIONS FIRST            │
-│  Write complete specs before coding │
-│  - Architecture docs                │
-│  - Database schema                  │
-│  - API contracts                    │
-│  - AI prompts                       │
-│  - Test scenarios                   │
-└─────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────┐
-│  2. AI GENERATES CODE               │
-│  AI writes code from clear specs    │
-│  - Faster (10x)                     │
-│  - Fewer bugs                       │
-│  - Consistent style                 │
-└─────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────┐
-│  3. TEST & ITERATE                  │
-│  Validate and refine                │
-└─────────────────────────────────────┘
+1. User sends voice message (Russian)
+       ↓
+2. Whisper API transcribes
+       ↓
+3. GPT-5 Nano parses task structure
+   - title, business_id, deadline, priority, executor
+       ↓
+4. RAG finds similar tasks (embeddings)
+       ↓
+5. Task saved to PostgreSQL with vector
+       ↓
+6. Telegram sends confirmation
+   - Shows transcript ("ВЫ СКАЗАЛИ:")
+   - Shows task details with action buttons
 ```
 
-### Why This Works
-- ✅ AI understands requirements clearly
-- ✅ No ambiguity in implementation
-- ✅ Easy to maintain and extend
-- ✅ Documentation always up-to-date
+---
+
+## 🎯 Key Features
+
+### Task Creation
+- **Voice-first**: Natural Russian speech input
+- **Smart parsing**: GPT-5 Nano extracts structure
+- **Business detection**: Location keywords + context
+- **Priority detection**: Keyword-based (важно, срочно, не важная)
+- **Deadline parsing**: Natural language (завтра, в пятницу в 14:00)
+- **Executor assignment**: Explicit mention or defaults to CEO
+
+### Task Management
+- **Commands**: /today, /week, /task, /complete, /help
+- **Inline buttons**: Edit, Delete, Complete, Cancel
+- **Filtering**: By business, date, status
+- **Status tracking**: open, in_progress, completed
+
+### Automation
+- **Daily Summary** (8 AM Almaty time):
+  - Grouped by business
+  - Color-coded priorities (🔴🟡🟢)
+  - Sorted by deadline time, then priority
+  - Shows executor and time
+  - Hides empty businesses
+
+- **Evening Summary** (7 PM Almaty time) - NEW! 🎉:
+  - Shows incomplete tasks (deadline today or overdue)
+  - Grouped by business
+  - Interactive buttons: "↪️ На завтра" and "✅ Готово"
+  - Celebration message if all tasks done
+  - Quick actions for each task
+
+- **Weekly Analytics** (Friday 5 PM):
+  - Completion metrics
+  - Time tracking analysis
+  - Insights and recommendations
+
+### Intelligence
+- **RAG System**: Learns from past tasks for better time estimates
+- **Vector Search**: pgvector for semantic similarity
+- **Business Isolation**: Each business has separate context
+- **Smart Defaults**: Priority (Средний), deadline (+7 days)
 
 ---
 
-## 📊 Phase 0 Roadmap
+## 📊 Development Phases
 
-### Week 1: Foundation (Current)
-- [ ] `.cursorrules` - AI coding rules
-- [ ] ADR-001 to ADR-003 - Key architecture decisions
-- [ ] Database ER diagram
-- [ ] Start SQL schema
+```
+Phase 0: Specifications  [████████████████████████████] 100% ✅
+Phase 1: Core Development[████████████████████████████] 100% ✅
+Phase 2: Git Setup       [████████████████████████████] 100% ✅
+Phase 3: Deployment      [████████████████████████████] 100% ✅
+Phase 4: Bug Fixes       [████████████████████████████] 100% ✅
+Phase 5: Testing         [█████████████████░░░░░░░░░░░] 70% 🔄
+Phase 6: Analytics       [░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
+```
 
-### Week 2: Contracts
-- [ ] Complete database schema
-- [ ] OpenAPI 3.0 specification
-- [ ] Pydantic models
-- [ ] AI prompts library
+### Current Status: Phase 5 - Testing (70%)
 
-### Week 3: Infrastructure
-- [ ] LangGraph workflows spec
-- [ ] Terraform configuration
-- [ ] Docker setup
-- [ ] Testing strategy
+**Completed:**
+- ✅ pytest configuration
+- ✅ Database fixtures (SQLite in-memory)
+- ✅ 44 unit tests passing
+  - Message formatting: 13 tests
+  - Task parsing: 11 tests
+  - Priority detection: 11 tests
+  - Task Repository: 9 tests
 
-**Goal**: Complete all 28 specification areas before writing ANY production code.
-
----
-
-## 🚨 Important Notes
-
-### Do's ✅
-- Follow AI-First approach (specs before code)
-- Update planning docs as you progress
-- Keep structure clean (use proper folders)
-- Write detailed ADRs for decisions
-- Test specifications with examples
-
-### Don'ts ❌
-- Don't write production code yet (Phase 0 = specs only)
-- Don't skip documentation
-- Don't scatter files (use organized structure)
-- Don't forget business context isolation
-- Don't skip debug mode consideration [[memory:7583598]]
-
-### When Making Decisions
-1. Document in ADR (Architecture Decision Record)
-2. Update relevant planning docs
-3. Consider impact on all 4 businesses
-4. Think about cost implications
-5. Validate against user requirements
-
----
-
-## 🔍 Quick Reference
-
-### Key Files to Check
-- **Master Plan**: `planning/PROJECT_PLAN.md`
-- **Specs Checklist**: `planning/SPEC_CHECKLIST.md`
-- **Current Status**: `planning/STATUS.md`
-- **Project Brief**: `docs/00-project-brief.md`
-- **Structure Guide**: `PROJECT_STRUCTURE.md`
-
-### Key Decisions
-- **Infrastructure**: Digital Ocean Droplet $6/month (not App Platform)
-- **AI Models**: GPT-5 Nano (cheap) + GPT-5 (analytics)
-- **Cost**: ~$9-12/month total (75% savings achieved)
-- **Approach**: AI-First with complete specifications
-
-### Critical Constraints
-- **Budget**: Keep costs low (~$9-12/month)
-- **Language**: Russian (primary user language)
-- **Timezone**: UTC+5 (Almaty, Kazakhstan)
-- **Businesses**: 4 separate contexts (MUST isolate)
-- **Logging**: Debug mode toggle [[memory:7583598]]
-
----
-
-## 🎬 How to Continue
-
-### For Next AI Session - PRODUCTION INFRASTRUCTURE SETUP! 🚀
-
-**Current Status:**
-- ✅ Phase 1 MVP полностью готов и развернут (100%)
-- ✅ Git репозиторий: https://github.com/Zolokon/business-planner.git
-- ✅ Digital Ocean сервер: 164.92.225.137
-- ✅ База данных работает (PostgreSQL + pgvector)
-- ✅ Приложение работает через systemd service
-- ✅ Nginx + Certbot установлены
-- ⏳ Нужно: Настроить HTTPS для Telegram webhook
+**In Progress:**
+- ⏳ Command handler tests
+- ⏳ Callback handler tests
+- ⏳ Integration tests
 
 **Next Steps:**
+- Integration tests (end-to-end workflows)
+- Coverage reporting setup
+- CI/CD pipeline configuration
 
-1. **Обновить DNS для домена inventum.com.kz** ← КРИТИЧНО!
-   - Текущий IP: 89.35.125.17
-   - Новый IP: 164.92.225.137
-   - A-запись должна указывать на новый сервер
-   - Ожидание DNS propagation: 5-30 минут
+---
 
-2. **Настроить Nginx reverse proxy** ← 5 min
-   ```bash
-   # Создать конфиг /etc/nginx/sites-available/business-planner
-   # Проксировать на localhost:8000
-   # Включить сайт
-   ```
+## 📝 Recent Session Summary (2025-10-22)
 
-3. **Получить SSL сертификат** ← 2 min
-   ```bash
-   certbot --nginx -d inventum.com.kz
-   ```
+### Session 3: Bug Fixes & Evening Summary (MAJOR FEATURE)
 
-4. **Настроить Telegram webhook** ← 2 min
-   ```bash
-   curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
-     -d "url=https://inventum.com.kz/webhook/telegram"
-   ```
+**1. CRITICAL BUG FIX: Completed tasks in daily summary** 🐛
+- **Issue**: Tasks marked as done still appeared in morning summary
+- **Root cause**: Status mismatch - `repository` set `status="done"`, but `daily_summary` filtered `status!="completed"`
+- **Fix**: Use consistent `"done"` status everywhere (per DB schema)
+- **Commit**: [bd0b700](https://github.com/Zolokon/business-planner/commit/bd0b700)
 
-**Total time**: ~30-60 минут (включая ожидание DNS)
+**2. BUG FIX: Artificial 23:59 time for date-only deadlines** 🐛
+- **Issue**: System automatically set 23:59 for tasks without explicit time
+- **Problem**: Created false impression of precise timing
+- **Fix**: Use 00:00 (midnight) for date-only deadlines
+  - "завтра" → `2025-10-23 00:00:00` → displays as "23.10.2025"
+  - "завтра в 15:00" → `2025-10-23 15:00:00` → displays as "23.10.2025 в 15:00"
+- **Files**: [voice_task_creation.py](src/ai/graphs/voice_task_creation.py), [callback_handler.py](src/telegram/handlers/callback_handler.py)
+- **Commit**: [4c9236a](https://github.com/Zolokon/business-planner/commit/4c9236a)
 
-**Важные детали:**
-- Systemd service: `/etc/systemd/system/business-planner.service`
-- Логи приложения: `/root/business-planner/app.log`
-- Systemd логи: `journalctl -u business-planner -f`
-- Статус сервиса: `systemctl status business-planner`
-- Health check: `curl http://localhost:8000/health`
+**3. Evening Task Summary (7 PM Automation)** 📊
+- **User request**: "в конце дня хочу увидеть задачи которые не выполнились"
+- **Implementation**:
+  - APScheduler cron job at 19:00 (7 PM) Almaty time
+  - Shows incomplete tasks with deadline today or overdue
+  - Grouped by business, sorted by overdue → priority
+  - Interactive buttons for each task:
+    - **↪️ На завтра** - Reschedules to tomorrow (keeps time if set)
+    - **✅ Готово** - Marks as completed
+  - Celebration message if all tasks done: "🎉 ОТЛИЧНАЯ РАБОТА!"
+- **Message format**:
+  ```
+  📊 ИТОГИ ДНЯ (22.10.2025)
+  Незавершённые задачи: 3
 
-### Commands to Explore
+  МАСТЕРСКАЯ INVENTUM
+
+  🔴 Починить фрезер
+  Дедлайн: сегодня, 15:00
+  [↪️ На завтра] [✅ Готово]
+
+  🟡 Диагностика станка
+  Дедлайн: просрочено (21.10)
+  [↪️ На завтра] [✅ Готово]
+  ```
+- **Testing**:
+  - Manual trigger: `POST /trigger-evening-summary`
+  - Production test: 4 incomplete tasks shown
+  - User tested: 3 tasks completed via buttons ✅
+- **Files**:
+  - [evening_summary.py](src/services/evening_summary.py) - Core logic
+  - [callback_handler.py](src/telegram/handlers/callback_handler.py) - Button handlers
+  - [scheduler.py](src/services/scheduler.py) - Job scheduling
+  - [system.py](src/api/routes/system.py) - Test endpoint
+- **Commit**: [99816f1](https://github.com/Zolokon/business-planner/commit/99816f1)
+
+### Deployment Results
+- ✅ All changes deployed to production
+- ✅ Scheduler running (3 jobs: daily 8 AM, evening 7 PM, weekly Friday 5 PM)
+- ✅ Evening summary tested: 4 tasks sent, 3 completed via buttons
+- ✅ Bug fixes verified in production
+- ✅ No regressions introduced
+
+---
+
+## 📝 Previous Session Summary (2025-10-20)
+
+### Session 1: Optimizations & Critical Bug Fix
+
+**1. GPT-5 Nano Prompt Optimization** ✨
+- 57% token reduction (564 → 245 tokens)
+- 10-15% faster response time
+- Maintained all critical business logic
+- [Documentation](docs/PROMPT_OPTIMIZATION.md)
+
+**2. Transcript Display Feature** 🎯
+- Users now see what Whisper recognized
+- Two separate messages: transcript + task details
+- Builds transparency and trust
+
+**3. CRITICAL BUG FIX: TypedDict Deadline** 🐛
+- Issue: Deadline parsed correctly but lost in state flow
+- Root cause: TypedDict key mismatch (`parsed_deadline_text` vs `parsed_deadline`)
+- Fixed: Renamed TypedDict key to match code usage
+- [Post-mortem](docs/BUGS/DEADLINE_TYPEDDICT_BUG.md)
+
+### Session 2: Priority System & Daily Summaries (MAJOR FEATURES)
+
+**4. Smart Priority System** 🎯
+- **User feedback**: "Приоритет только большими буквами" + "назначается случайно"
+- **Changes**:
+  - Title Case formatting: "ВЫСОКИЙ" → "Высокий"
+  - Smart keyword detection:
+    - HIGH (1): "важно", "важная", "срочно", "ASAP"
+    - MEDIUM (2): Default for most tasks
+    - LOW (3): "не важно", "не такая важная", "не срочно"
+    - BACKLOG (4): "отложить", "потом", "в бэклог"
+- **Testing**: 11 test cases covering all priority levels
+- **Files**: [voice_task_creation.py:343-347](src/ai/graphs/voice_task_creation.py#L343-L347), [openai_client.py:316-321](src/infrastructure/external/openai_client.py#L316-L321)
+
+**5. Daily Task Summary (8 AM Automation)** 📋
+- **User request**: "в 8 утра список задач"
+- **Implementation**:
+  - APScheduler cron job at 8:00 AM Almaty time (UTC+5)
+  - Grouped by business
+  - Color-coded priorities: 🔴 Высокий, 🟡 Средний, 🟢 Низкий
+  - Sorted by deadline time, then priority
+  - Shows executor and time if specified
+  - Filters: today/tomorrow only, excludes backlog
+- **Message format**:
+  ```
+  📋 ЗАДАЧИ НА СЕГОДНЯ (21 октября)
+
+  МАСТЕРСКАЯ INVENTUM
+  🔴 Починить фрезер (Максим, 10:00)
+  🟡 Диагностика оборудования
+
+  Всего: 2 задачи (1 срочная, 1 средняя)
+  ```
+- **Testing**: Manual trigger via `/trigger-daily-summary`
+- **Production**: Tested successfully with 20 tasks
+- **Files**: [daily_summary.py](src/services/daily_summary.py), [scheduler.py](src/services/scheduler.py)
+
+**6. Bug Fixes** 🔧
+- Wrong telegram_id (found via production logs)
+- Task status filter ("open" vs "active")
+- Endpoint routing conflict (`/tasks/clear-all` → `/clear-all-tasks`)
+- Priority keyword expansion ("не такая важная")
+
+**7. Database Cleanup Endpoint** 🗑️
+- `DELETE /clear-all-tasks` for testing/development
+- Permanently deletes all user tasks
+- [system.py:117-155](src/api/routes/system.py#L117-L155)
+
+### Previous Deployment Results (2025-10-20)
+- ✅ All changes deployed to production
+- ✅ Scheduler running (2 jobs: daily 8 AM, weekly Friday 5 PM)
+- ✅ Daily summary tested: 20 tasks sent successfully
+- ✅ 44/44 unit tests passing
+- ✅ No regressions introduced
+
+### Business Rules Updated
+- **Deadline formatting**: Shows time if specified (e.g., "21.10.2025 в 14:30")
+- **Business detection**: Location keywords override team membership
+  - "мастерская" → always Inventum (id:1)
+  - "лаборатория" → always Inventum Lab (id:2)
+  - "разработка" explicitly mentioned → R&D (id:3)
+  - Максим/Дима default to Inventum unless "разработка" present
+- **Priority assignment**: Smart keyword-based with default to Средний
+
+---
+
+## 🔑 Key Files
+
+### Configuration
+- [.env.example](.env.example) - Environment variables template
+- [requirements.txt](requirements.txt) - Python dependencies
+- [pyproject.toml](pyproject.toml) - Project metadata
+
+### Source Code
+- [src/main.py](src/main.py) - FastAPI application entry point
+- [src/api/routes/](src/api/routes/) - REST API endpoints
+- [src/bot/handlers/](src/bot/handlers/) - Telegram bot handlers
+- [src/ai/graphs/](src/ai/graphs/) - LangGraph workflows
+- [src/services/](src/services/) - Business logic & scheduler
+- [src/infrastructure/](src/infrastructure/) - External services (OpenAI, DB)
+
+### Testing
+- [tests/conftest.py](tests/conftest.py) - Shared fixtures
+- [tests/unit/](tests/unit/) - Unit tests
+- [TESTING_GUIDE.md](TESTING_GUIDE.md) - Testing documentation
+
+### Documentation
+- [DEPLOY.md](DEPLOY.md) - Deployment guide
+- [docs/TEAM.md](docs/TEAM.md) - Team structure & roles
+- [docs/BUSINESS_DETECTION_RULES.md](docs/BUSINESS_DETECTION_RULES.md) - Business detection logic
+- [docs/BUGS/](docs/BUGS/) - Bug post-mortems
+
+### Infrastructure
+- [docker-compose.prod.yml](docker-compose.prod.yml) - Production Docker setup
+- [Dockerfile](Dockerfile) - Application container
+- [infrastructure/terraform/](infrastructure/terraform/) - IaC configuration
+
+---
+
+## 🚀 Quick Commands
+
+### Local Development
 ```bash
-# See project structure
-tree /F /A
+# Install dependencies
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
-# Read key planning docs
-cat planning/PROJECT_PLAN.md
-cat planning/STATUS.md
+# Run tests
+pytest tests/unit/ -v -m unit
 
-# Check what needs to be done
-cat planning/SPEC_CHECKLIST.md | grep -A 5 "1.1"
+# Run application locally
+python -m src.main
+```
 
-# See current folder
-pwd
-ls
+### Production Deployment
+```bash
+# SSH to server
+ssh root@164.92.225.137
+
+# Pull latest code
+cd /root/business-planner && git pull origin main
+
+# Restart service
+sudo systemctl restart business-planner
+
+# Check status
+sudo systemctl status business-planner
+
+# View logs
+tail -f /root/business-planner/app.log
+journalctl -u business-planner -f
+```
+
+### Testing Endpoints
+```bash
+# Health check
+curl https://inventum.com.kz/health
+
+# Trigger daily summary (8 AM)
+curl -X POST https://inventum.com.kz/trigger-daily-summary
+
+# Trigger evening summary (7 PM) - NEW!
+curl -X POST https://inventum.com.kz/trigger-evening-summary
+
+# Clear all tasks (CAUTION!)
+curl -X DELETE https://inventum.com.kz/clear-all-tasks
 ```
 
 ---
 
-## 💬 Quick Answers
+## 🎯 Next Steps
 
-**Q: Where do I start?**  
-A: Create `.cursorrules` file in project root (see planning/SPEC_CHECKLIST.md section 1.1)
+### Immediate Priorities
+1. **Complete Phase 5 Testing** (30% remaining)
+   - Add command handler tests
+   - Add callback handler tests
+   - Set up integration tests
+   - Configure coverage reporting
 
-**Q: What's the priority?**  
-A: Follow Phase 0 in planning/PROJECT_PLAN.md order. Don't skip ahead.
+2. **Begin Phase 6: Analytics** (0% complete)
+   - Weekly analytics implementation
+   - Time tracking improvements
+   - Performance metrics dashboard
 
-**Q: Can I start coding features?**  
-A: NO! Phase 0 = Specifications only. No production code until specs complete.
-
-**Q: How do I track progress?**  
-A: Update planning/STATUS.md and use TODO list as you complete tasks.
-
-**Q: What if I have questions?**  
-A: Check docs/00-project-brief.md for business context and requirements.
-
-**Q: How much is this costing?**  
-A: Target is $9-12/month total (already optimized 75% from original $38-40).
-
----
-
-## 🎯 Success Criteria
-
-### Phase 0 Complete When:
-- [ ] All 28 specification areas addressed
-- [ ] Database schema complete with migrations
-- [ ] API fully documented (OpenAPI)
-- [ ] All AI prompts written
-- [ ] Infrastructure code ready (Terraform + Docker)
-- [ ] Testing strategy defined
-- [ ] `.cursorrules` established
-
-**Estimated Time**: 3 weeks  
-**Current Progress**: 5% (foundation done)  
-**Can Start Coding**: Only after Phase 0 complete
+### Future Enhancements
+- Mobile app (React Native)
+- Multi-user support (team collaboration)
+- Advanced RAG (better time estimates)
+- Voice output (text-to-speech responses)
+- Analytics dashboard (web interface)
 
 ---
 
-## 📞 Contact Context
+## 📞 Contact & Support
 
-**User Profile**:
-- Name: Константин
-- Role: CEO
-- Location: Almaty, Kazakhstan (UTC+5)
-- Businesses: 4 (Inventum, Lab, R&D, Trade)
-- Team: 8 people (see `docs/TEAM.md` for details)
-- Preference: Voice input, minimal manual work
-- Budget-conscious: Chose $6 Droplet over $35 managed services
-- Technical: Understands development, wants proper structure
+**Production Bot**: @PM_laboratory_bot
+**GitHub**: https://github.com/Zolokon/business-planner
+**Server**: 164.92.225.137 (Digital Ocean)
+**Domain**: https://inventum.com.kz
 
-**Team Structure**:
-- **Leadership**: Константин (CEO), Лиза (Marketing - all businesses)
-- **Inventum**: Максим (Director), Дима (Master), Максут (Field Service)
-- **Inventum Lab**: Юрий Владимирович (Director), Мария (CAD/CAM)
-- **R&D**: Максим, Дима (cross-functional from Inventum)
-- **Import & Trade**: Слава (Legal/Accounting)
-- **Full Details**: `docs/TEAM.md`
-
-**User Memory**:
-- Prefers Serial output only during debugging [[memory:7583598]]
+**User**: Константин (CEO)
+**Location**: Almaty, Kazakhstan (UTC+5)
+**Team**: 8 people across 4 businesses
 
 ---
 
-## ✨ Final Checklist for New Session
-
-Before starting work, confirm:
-
-- [ ] Read START_HERE.md (this file)
-- [ ] Scanned planning/PROJECT_PLAN.md
-- [ ] Understood current phase (Phase 0 - Specs)
-- [ ] Know next task (create `.cursorrules`)
-- [ ] Understand AI-First approach (specs first)
-- [ ] Aware of cost constraints ($9-12/month)
-- [ ] Remember business isolation principle
-- [ ] Know logging preference [[memory:7583598]]
-
-**Ready?** → Start creating `.cursorrules` file!
+**Last Updated**: 2025-10-22
+**Status**: 🟢 Production & Operational
+**Next Review**: After Phase 5 completion
 
 ---
 
-**Last Updated**: 2025-10-17  
-**Next Update**: When Phase 0 Week 1 complete  
-**Session Handoff**: ✅ Complete  
+## 🎉 Latest Features (2025-10-22)
 
----
-
-## 🚀 DEPLOYED AND RUNNING!
-
-**Production Status:**
-1. ✅ GitHub repository: https://github.com/Zolokon/business-planner.git
-2. ✅ Code pushed to main branch
-3. ✅ Digital Ocean server: 164.92.225.137
-4. ✅ PostgreSQL + Redis running in Docker
-5. ✅ Application running via systemd service
-6. ✅ Database schema created (6 tables)
-7. ⏳ Nginx + SSL setup in progress
-
-**Решенные проблемы:**
-- ✅ OOM kills → создан 2GB swap file (1GB RAM + 2GB swap = 3GB total)
-- ✅ Database connection → исправлен DATABASE_URL (@postgres → @localhost)
-- ✅ Database schema mismatch → пересоздана схема через SQLAlchemy models
-- ✅ Database initialization skipped → раскомментирован `await init_database()`
-- ✅ Manual startup → создан systemd service для автоперезапуска
-- ✅ asyncpg на Linux → работает идеально (проблема была только на Windows)
-
-**Осталось:**
-- ⏳ DNS: изменить A-запись inventum.com.kz (89.35.125.17 → 164.92.225.137)
-- ⏳ Nginx: настроить reverse proxy
-- ⏳ SSL: получить сертификат Let's Encrypt
-- ⏳ Telegram: настроить webhook с HTTPS
-
----
-
-## 📚 Key Files for Deployment
-
-- **[DEPLOY.md](DEPLOY.md)** - Полное руководство по развертыванию
-- **[.env.example](.env.example)** - Шаблон переменных окружения
-- **[docker-compose.prod.yml](docker-compose.prod.yml)** - Production setup
-- **[Dockerfile](Dockerfile)** - Контейнеризация приложения
-
----
-
-**Status:** 🟢 Deployed and Running on Production Server!
-**Server:** 164.92.225.137 (Digital Ocean)
-**Uptime:** Managed by systemd (auto-restart on failure)
-**Cost:** $9-12/month ($6 droplet + $3-5 AI APIs)
-**Next:** Configure HTTPS + Telegram webhook (30-60 min)
-
----
-
-## 📝 Recent Session Summary (2025-10-20)
-
-### Optimizations & UX Improvements
-
-**1. GPT-5 Nano Prompt Optimization** ✨
-- **Achievement**: 57% token reduction (564 → 245 tokens)
-- **Impact**:
-  - Faster response (~1s → ~0.85s)
-  - Lower cost per task ($0.0000846 → $0.0000368)
-  - Cleaner, more maintainable prompt
-- **What changed**:
-  - Removed verbose keyword lists (GPT infers from context)
-  - Condensed JSON format notation
-  - Simplified team descriptions
-  - Kept all critical business logic
-- **Testing**: 43/43 unit tests passing
-- **Docs**: [PROMPT_OPTIMIZATION.md](docs/PROMPT_OPTIMIZATION.md)
-
-**2. Transcript Display Feature** 🎯
-- **Enhancement**: Voice message transcripts now visible to users
-- **Format**:
-  ```
-  ВЫ СКАЗАЛИ:
-  "Починить фрезер для Иванова"
-
-  ---
-
-  ЗАДАЧА СОЗДАНА
-  ...
-  ```
-- **Benefits**:
-  - Transparency: Users see what Whisper understood
-  - Trust: No black box AI processing
-  - Debugging: Identify transcription vs parsing errors
-  - Context: Reference for editing/deleting tasks
-- **Testing**: 43/43 unit tests passing
-- **Docs**: [TRANSCRIPT_DISPLAY.md](docs/TRANSCRIPT_DISPLAY.md)
-
-**3. Testing Infrastructure** ✅
-- **Coverage**: 43 unit tests passing
-  - Message formatting: 13 tests
-  - Task parsing: 19 tests
-  - Database CRUD: 15 tests (partially)
-- **Framework**: pytest + pytest-asyncio
-- **Database**: SQLite in-memory with StaticPool
-- **Mocks**: OpenAI, Telegram, async sessions
-- **Docs**: [TESTING_GUIDE.md](TESTING_GUIDE.md)
-
-### Files Modified This Session
-- `src/infrastructure/external/openai_client.py` - Optimized GPT-5 Nano prompt
-- `src/ai/graphs/voice_task_creation.py` - Added transcript to response
-- `tests/unit/test_format_response.py` - Updated test assertions
-- `docs/05-ai-specifications/prompts/task-parser.md` - v2.0 prompt docs
-- `docs/PROMPT_OPTIMIZATION.md` - Complete optimization analysis
-- `docs/TRANSCRIPT_DISPLAY.md` - Feature documentation
-
-### Performance Impact
-- **Prompt optimization**: 10-15% faster task parsing
-- **Transcript display**: No performance impact (already in state)
-- **Cost savings**: $0.48/month at 10K tasks/month
-
-### Test Status
-- ✅ 43/43 unit tests passing
-- ✅ No regressions introduced
-- ✅ All critical paths covered
-
-**Previous Session**: Phase 3-4 deployment + bug fixes (100% complete)
-**Current Session**: Phase 5 optimizations + UX improvements
-**Next**: Continue Phase 5 testing (integration tests, command handlers)
-
+1. **Evening Summary at 7 PM** - Shows incomplete tasks with quick action buttons
+2. **Bug Fix**: Completed tasks no longer appear in daily summary
+3. **Bug Fix**: Date-only deadlines now use 00:00 instead of 23:59
+4. **Scheduler**: Now running 3 automated jobs (morning, evening, weekly)
