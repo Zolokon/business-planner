@@ -426,10 +426,10 @@ async def handle_set_deadline_callback(
     task_id = int(parts[1])
 
     try:
-        # Parse date
+        # Parse date (will be midnight 00:00 by default if no time specified)
         deadline_date = datetime.fromisoformat(date_str)
-        # Set time to end of day
-        deadline = deadline_date.replace(hour=23, minute=59, second=59)
+        # Keep as-is: 00:00 for date-only deadlines
+        deadline = deadline_date
 
         session_gen = get_session()
         session = await anext(session_gen)

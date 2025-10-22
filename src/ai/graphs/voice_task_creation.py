@@ -260,14 +260,12 @@ async def create_task_db_node(
                     # Parse ISO datetime string (e.g. "2025-10-20T10:00:00" or "2025-10-20")
                     deadline = datetime.fromisoformat(state["parsed_deadline"])
 
-                    # If no time specified (midnight), set to end of day
-                    if deadline.hour == 0 and deadline.minute == 0 and deadline.second == 0:
-                        deadline = deadline.replace(hour=23, minute=59, second=59)
-
                     # Format for display
-                    if deadline.hour == 23 and deadline.minute == 59:
+                    # If no time specified (midnight = 00:00), show only date
+                    if deadline.hour == 0 and deadline.minute == 0 and deadline.second == 0:
                         deadline_text = deadline.strftime("%d.%m.%Y")
                     else:
+                        # Time explicitly specified, show date + time
                         deadline_text = deadline.strftime("%d.%m.%Y в %H:%M")
 
                 except (ValueError, TypeError) as e:
