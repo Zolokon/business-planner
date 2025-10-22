@@ -20,6 +20,7 @@ from src.config import settings
 from src.utils.logger import logger
 from src.infrastructure.database import get_session
 from src.services.daily_summary import send_daily_summary_to_user
+from src.services.evening_summary import send_evening_summary_to_user
 
 
 # ============================================================================
@@ -70,6 +71,44 @@ async def daily_summary_job():
         logger.error("daily_summary_job_failed", error=str(e), exc_info=True)
 
 
+async def evening_summary_job():
+    """Send evening task summary to all users at 7 PM.
+
+    Shows incomplete tasks with quick action buttons.
+    Runs every day at 19:00 (7 PM) local time (Almaty timezone: UTC+5).
+    """
+    logger.info("evening_summary_job_started")
+
+    try:
+        # Get bot instance
+        bot = Bot(token=settings.telegram_bot_token)
+
+        # Get database session
+        session_gen = get_session()
+        session = await anext(session_gen)
+
+        try:
+            # For now, send to user ID 1 (CEO)
+            # TODO: In future, fetch all active users from database
+            user_id = 1
+            user_telegram_id = 1802270374  # CEO's Telegram ID (KZ_workshop)
+
+            await send_evening_summary_to_user(
+                bot=bot,
+                user_telegram_id=user_telegram_id,
+                session=session,
+                user_id=user_id
+            )
+
+            logger.info("evening_summary_job_completed")
+
+        finally:
+            await session.close()
+
+    except Exception as e:
+        logger.error("evening_summary_job_failed", error=str(e), exc_info=True)
+
+
 async def weekly_analytics_job():
     """Send weekly analytics on Fridays.
 
@@ -101,6 +140,15 @@ def init_scheduler() -> AsyncIOScheduler:
         trigger=CronTrigger(hour=8, minute=0, timezone="Asia/Almaty"),
         id="daily_summary",
         name="Daily Task Summary",
+        replace_existing=True
+    )
+
+    # Add evening summary job (7 PM every day)
+    scheduler_instance.add_job(
+        evening_summary_job,
+        trigger=CronTrigger(hour=19, minute=0, timezone="Asia/Almaty"),
+        id="evening_summary",
+        name="Evening Task Summary",
         replace_existing=True
     )
 
@@ -177,3 +225,14 @@ async def trigger_daily_summary_now():
     """
     logger.info("manual_daily_summary_triggered")
     await daily_summary_job()
+
+
+async def trigger_evening_summary_now():
+    """Manually trigger evening summary (for testing).
+
+    Usage:
+        From FastAPI endpoint or CLI:
+        await trigger_evening_summary_now()
+    """
+    logger.info("manual_evening_summary_triggered")
+    await evening_summary_job()

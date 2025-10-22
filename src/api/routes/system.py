@@ -13,6 +13,7 @@ from src.domain.models import Business, Member
 from src.infrastructure.database import get_session, check_database_health
 from src.utils.logger import logger
 from src.services import trigger_daily_summary_now
+from src.services.scheduler import trigger_evening_summary_now
 
 
 router = APIRouter()
@@ -111,6 +112,23 @@ async def trigger_daily_summary():
         return {"status": "success", "message": "Daily summary sent"}
     except Exception as e:
         logger.error("manual_trigger_failed", error=str(e))
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/trigger-evening-summary")
+async def trigger_evening_summary():
+    """Manually trigger evening summary (for testing).
+
+    Sends evening task summary with incomplete tasks and action buttons.
+
+    Returns:
+        Success message
+    """
+    try:
+        await trigger_evening_summary_now()
+        return {"status": "success", "message": "Evening summary sent"}
+    except Exception as e:
+        logger.error("manual_evening_trigger_failed", error=str(e))
         return {"status": "error", "message": str(e)}
 
 

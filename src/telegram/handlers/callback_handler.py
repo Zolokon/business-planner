@@ -94,6 +94,10 @@ async def handle_callback_query(
             await handle_complete_prompt_callback(query, context)
         elif action == "new_task":
             await handle_new_task_callback(query, context)
+        elif action == "evening_reschedule":
+            await handle_evening_reschedule_callback(query, context, int(param))
+        elif action == "evening_complete":
+            await handle_evening_complete_callback(query, context, int(param))
         else:
             logger.warning("unknown_callback_action", action=action)
             await query.edit_message_text("❌ Неизвестное действие")
@@ -609,4 +613,121 @@ async def handle_new_task_callback(
         "или\n"
         "📝 /task <описание задачи>"
     )
+
+
+async def handle_evening_reschedule_callback(
+    query,
+    context: ContextTypes.DEFAULT_TYPE,
+    task_id: int
+) -> None:
+    """Handle 'reschedule to tomorrow' button from evening summary.
+
+    Args:
+        query: Callback query
+        context: Bot context
+        task_id: Task ID to reschedule
+    """
+    from src.domain.models import TaskUpdate
+    from datetime import datetime, timedelta
+
+    user = query.from_user
+
+    logger.info("evening_reschedule_task", user_id=user.id, task_id=task_id)
+
+    try:
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
+            repo = TaskRepository(session)
+
+            # Get current task
+            task = await repo.get_by_id(task_id)
+            if not task:
+                await query.edit_message_text(f"❌ Задача #{task_id} не найдена")
+                return
+
+            # Calculate tomorrow's date
+            tomorrow = datetime.now().date() + timedelta(days=1)
+
+            # Keep time if exists, otherwise set to 00:00
+            if task.deadline and (task.deadline.hour != 0 or task.deadline.minute != 0):
+                # Has specific time, keep it
+                new_deadline = datetime.combine(tomorrow, task.deadline.time())
+            else:
+                # No specific time, set to midnight (00:00)
+                new_deadline = datetime.combine(tomorrow, datetime.min.time())
+
+            # Update deadline
+            task_update = TaskUpdate(deadline=new_deadline)
+            updated_task = await repo.update(task_id, task_update)
+
+        finally:
+            await session.close()
+
+        # Format response
+        deadline_str = new_deadline.strftime("%d.%m.%Y")
+        if new_deadline.hour != 0 or new_deadline.minute != 0:
+            deadline_str += f" в {new_deadline.strftime('%H:%M')}"
+
+        await query.edit_message_text(
+            f"✅ ЗАДАЧА ПЕРЕНЕСЕНА НА ЗАВТРА\n\n"
+            f"{updated_task.title}\n\n"
+            f"Новый дедлайн: {deadline_str}"
+        )
+
+        logger.info("evening_task_rescheduled", task_id=task_id, new_deadline=deadline_str)
+
+    except Exception as e:
+        logger.error("evening_reschedule_failed", task_id=task_id, error=str(e))
+        await query.edit_message_text("❌ Ошибка при переносе задачи")
+
+
+async def handle_evening_complete_callback(
+    query,
+    context: ContextTypes.DEFAULT_TYPE,
+    task_id: int
+) -> None:
+    """Handle 'complete task' button from evening summary.
+
+    Args:
+        query: Callback query
+        context: Bot context
+        task_id: Task ID to complete
+    """
+    user = query.from_user
+
+    logger.info("evening_complete_task", user_id=user.id, task_id=task_id)
+
+    try:
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
+            repo = TaskRepository(session)
+
+            # Get task
+            task = await repo.get_by_id(task_id)
+            if not task:
+                await query.edit_message_text(f"❌ Задача #{task_id} не найдена")
+                return
+
+            # Use estimated duration as actual (user can adjust later if needed)
+            actual_duration = task.estimated_duration or 60
+
+            # Complete task
+            completed_task = await repo.complete(task_id, actual_duration)
+
+        finally:
+            await session.close()
+
+        await query.edit_message_text(
+            f"✅ ЗАДАЧА ЗАВЕРШЕНА\n\n"
+            f"{completed_task.title}\n\n"
+            f"Отличная работа!"
+        )
+
+        logger.info("evening_task_completed", user_id=user.id, task_id=task_id)
+
+    except Exception as e:
+        logger.error("evening_complete_failed", task_id=task_id, error=str(e))
+        await query.edit_message_text("❌ Ошибка при завершении задачи")
 
