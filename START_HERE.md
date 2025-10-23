@@ -473,14 +473,18 @@ curl -X DELETE https://inventum.com.kz/clear-all-tasks
 
 ---
 
-**Last Updated**: 2025-10-22
+**Last Updated**: 2025-10-23
 **Status**: 🟢 Production & Operational
 **Next Review**: After Phase 5 completion
 
 ---
 
-## 🎉 Latest Features (2025-10-22)
+## 🎉 Latest Features
 
+### Session 4 (2025-10-23)
+- **Bug Fix**: Archived (deleted) tasks no longer appear in daily summary
+
+### Session 3 (2025-10-22)
 1. **Evening Summary at 7 PM** - Shows incomplete tasks with quick action buttons
 2. **Bug Fix**: Completed tasks no longer appear in daily summary
 3. **Bug Fix**: Date-only deadlines now use 00:00 instead of 23:59
