@@ -270,16 +270,15 @@ async def test_complete_task_already_completed(test_session, test_user, test_bus
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_delete_task_soft_delete(test_session, test_task):
-    """Test that delete is a soft delete (archives task)."""
+    """Test that delete permanently removes task from database."""
 
     repo = TaskRepository(test_session)
 
     await repo.delete(test_task.id)
 
-    # Task should still exist but be archived
+    # Task should be completely removed from database
     deleted_task = await repo.get_by_id(test_task.id)
-    assert deleted_task is not None
-    assert deleted_task.status == TaskStatus.ARCHIVED
+    assert deleted_task is None
 
 
 @pytest.mark.unit

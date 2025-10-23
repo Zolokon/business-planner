@@ -8,7 +8,9 @@
       "Bash(curl:*)",
       "Bash(ssh root@164.92.225.137 \"tail -100 /root/business-planner/app.log | grep -A 10 -B 5 evening\")",
       "Bash(ssh root@164.92.225.137 \"tail -150 /root/business-planner/app.log | grep -E ''evening_reschedule''\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

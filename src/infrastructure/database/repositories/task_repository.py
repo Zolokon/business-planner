@@ -268,8 +268,8 @@ class TaskRepository:
         return completed_task
     
     async def delete(self, task_id: int) -> None:
-        """Delete task (soft delete to archived).
-        
+        """Delete task permanently from database.
+
         Args:
             task_id: Task ID
         """
@@ -277,16 +277,16 @@ class TaskRepository:
             select(TaskORM).where(TaskORM.id == task_id)
         )
         task_orm = result.scalar_one_or_none()
-        
+
         if task_orm is None:
             raise ValueError(f"Task {task_id} not found")
-        
-        # Soft delete (archive)
-        task_orm.status = "archived"
-        
+
+        # Hard delete - permanently remove from database
+        await self.session.delete(task_orm)
+
         await self.session.commit()
-        
-        logger.info("task_deleted", task_id=task_id)
+
+        logger.info("task_permanently_deleted", task_id=task_id)
     
     async def update_embedding(self, task_id: int, embedding: list[float]) -> None:
         """Update task embedding (async, after task created).
