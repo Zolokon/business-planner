@@ -482,7 +482,9 @@ curl -X DELETE https://inventum.com.kz/clear-all-tasks
 ## 🎉 Latest Features
 
 ### Session 4 (2025-10-23)
-- **Bug Fix**: Archived (deleted) tasks no longer appear in daily summary
+1. **Bug Fix**: Archived (deleted) tasks no longer appear in daily summary
+2. **Feature Change**: Task deletion now permanently removes tasks (was: archived)
+   - User requirement: "когда я удаляю задачу я хочу ее удалить чтобы ее вообще не было"
 
 ### Session 3 (2025-10-22)
 1. **Evening Summary at 7 PM** - Shows incomplete tasks with quick action buttons
