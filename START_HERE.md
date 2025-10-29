@@ -838,6 +838,14 @@ frontend/
    - Pulled on production server
    - Restarted backend service
 
+5. ✅ **HTTP Basic Auth Protection** (Security):
+   - Added password protection for Web UI
+   - Configured Nginx with `auth_basic`
+   - Created `.htpasswd` file on server
+   - Excluded `/health` and `/telegram/` from auth (for bot)
+   - Credentials stored in `WEB_UI_CREDENTIALS.txt` (local only, not in git)
+   - Username: `admin` / Password: generated 20-char secure string
+
 **Current Status:**
 - 🌐 **Web UI Live**: https://inventum.com.kz
   - 🔐 **Protected**: HTTP Basic Auth (username/password required)
