@@ -134,9 +134,12 @@ async def list_tasks(
             limit=limit
         )
     else:
-        # TODO: Implement find_all method
-        tasks = []
-    
+        tasks = await repo.find_all(
+            user_id=user_id,
+            status=status,
+            limit=limit
+        )
+
     return tasks
 
 

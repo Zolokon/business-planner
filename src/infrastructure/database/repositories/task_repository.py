@@ -88,6 +88,34 @@ class TaskRepository:
         
         return Task.model_validate(task_orm)
     
+    async def find_all(
+        self,
+        user_id: int,
+        status: str | None = None,
+        limit: int = 100
+    ) -> list[Task]:
+        """Find all tasks for a user across all businesses.
+
+        Args:
+            user_id: User ID
+            status: Optional status filter
+            limit: Maximum results
+
+        Returns:
+            List of all user's tasks
+        """
+        query = select(TaskORM).where(TaskORM.user_id == user_id)
+
+        if status:
+            query = query.where(TaskORM.status == status)
+
+        query = query.limit(limit).order_by(TaskORM.created_at.desc())
+
+        result = await self.session.execute(query)
+        tasks_orm = result.scalars().all()
+
+        return [Task.model_validate(t) for t in tasks_orm]
+
     async def find_by_business(
         self,
         user_id: int,
@@ -96,15 +124,15 @@ class TaskRepository:
         limit: int = 100
     ) -> list[Task]:
         """Find tasks by business context.
-        
+
         CRITICAL: Filters by business_id for isolation (ADR-003).
-        
+
         Args:
             user_id: User ID
             business_id: Business context (1-4)
             status: Optional status filter
             limit: Maximum results
-            
+
         Returns:
             List of tasks in this business context
         """
@@ -114,15 +142,15 @@ class TaskRepository:
                 TaskORM.business_id == business_id  # CRITICAL: Business isolation
             )
         )
-        
+
         if status:
             query = query.where(TaskORM.status == status)
-        
+
         query = query.limit(limit).order_by(TaskORM.created_at.desc())
-        
+
         result = await self.session.execute(query)
         tasks_orm = result.scalars().all()
-        
+
         return [Task.model_validate(t) for t in tasks_orm]
     
     async def find_similar(
