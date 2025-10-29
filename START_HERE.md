@@ -840,12 +840,14 @@ frontend/
 
 **Current Status:**
 - 🌐 **Web UI Live**: https://inventum.com.kz
+  - 🔐 **Protected**: HTTP Basic Auth (username/password required)
+  - 📋 **Credentials**: See `WEB_UI_CREDENTIALS.txt` (not in git)
 - 🤖 **Telegram Bot**: Still working (@PM_laboratory_bot)
 - 📊 **Real Data**: Frontend shows 15 production tasks (2 open, 13 done)
 - 🔒 **SSL**: Let's Encrypt certificates active
 
 **Next Steps for Web:**
-- [ ] Add authentication (currently public access)
+- [x] Add authentication - ✅ **DONE** (HTTP Basic Auth)
 - [ ] Create task form (add new tasks from web)
 - [ ] Add charts/analytics dashboard
 - [ ] Implement Kanban board view
