@@ -47,7 +47,7 @@ async def get_bot_application():
 # Webhook Endpoint
 # ============================================================================
 
-@router.post("/telegram")
+@router.post("/")
 async def telegram_webhook(
     request: Request,
     x_telegram_bot_api_secret_token: str | None = Header(None)
@@ -144,7 +144,7 @@ async def telegram_webhook(
 # Webhook Management Endpoints
 # ============================================================================
 
-@router.post("/telegram/set-webhook")
+@router.post("/set-webhook")
 async def set_webhook() -> dict:
     """Set Telegram webhook URL (admin endpoint).
     
@@ -194,7 +194,7 @@ async def set_webhook() -> dict:
         )
 
 
-@router.get("/telegram/webhook-info")
+@router.get("/webhook-info")
 async def get_webhook_info() -> dict:
     """Get current webhook configuration (admin endpoint).
     
@@ -225,7 +225,7 @@ async def get_webhook_info() -> dict:
         )
 
 
-@router.delete("/telegram/webhook")
+@router.delete("/webhook")
 async def delete_webhook() -> dict:
     """Delete webhook (admin endpoint).
     

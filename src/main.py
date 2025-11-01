@@ -112,7 +112,7 @@ app.add_middleware(
 # Include routers
 app.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
 app.include_router(system.router, tags=["system"])
-app.include_router(telegram.router, prefix="/webhook", tags=["telegram"])
+app.include_router(telegram.router, prefix="/telegram", tags=["telegram"])
 
 # TODO: Implement and include
 # app.include_router(projects.router, prefix="/projects", tags=["projects"])
