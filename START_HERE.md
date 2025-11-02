@@ -1,7 +1,7 @@
 # 🚀 START HERE - Business Planner
 
 > **For New AI Sessions**: Read this FIRST to understand the project context
-> **Last Updated**: 2025-10-29
+> **Last Updated**: 2025-11-01
 > **Current Phase**: Production + Web UI 🟢
 
 ---
@@ -807,6 +807,82 @@ frontend/
 
 ---
 
+### Session 9 (2025-11-01) - **Voice Messages Fixed!** 🎤✅
+
+**CRITICAL BUG FIX: Telegram webhook returning 401 Unauthorized**
+
+**Problem:**
+After adding HTTP Basic Auth for Web UI protection (Session 8), voice messages stopped working completely.
+
+**Root Cause:**
+When HTTP Basic Auth was added to protect the Web UI, the Telegram webhook endpoint was blocked:
+1. **Old webhook URL**: `https://inventum.com.kz/webhook/telegram`
+2. **Nginx auth exception**: Only `/telegram/` path excluded from auth
+3. **Backend route**: Code on server had outdated `prefix="/webhook"`
+4. **Result**: All Telegram updates got `401 Unauthorized`
+
+**Diagnosis Process:**
+1. ✅ Checked Nginx logs → Found `401` errors on `/webhook/telegram`
+2. ✅ Verified webhook URL via Telegram API → `https://inventum.com.kz/webhook/telegram`
+3. ✅ Found Nginx exception only for `/telegram/` path
+4. ✅ Discovered server had old code with `prefix="/webhook"`
+
+**Solution:**
+1. **Updated webhook URL** in Telegram: `/webhook/telegram` → `/telegram/`
+2. **Fixed backend routing** in [src/main.py](src/main.py):
+   - Changed: `app.include_router(telegram.router, prefix="/webhook")`
+   - To: `app.include_router(telegram.router, prefix="/telegram")`
+3. **Simplified endpoints** in [src/api/routes/telegram.py](src/api/routes/telegram.py):
+   - Moved prefix from endpoints to router
+   - Changed `@router.post("/telegram")` → `@router.post("/")`
+   - Updated management endpoints: `/telegram/webhook-info` → `/webhook-info`
+4. **Deployed to production**:
+   - Committed changes (commit: `577ec71`)
+   - Pushed to GitHub
+   - Pulled on server
+   - Restarted backend service
+
+**Nginx Configuration (Correct):**
+```nginx
+# HTTP Basic Authentication for Web UI
+auth_basic "Business Planner - Private Access";
+auth_basic_user_file /etc/nginx/.htpasswd;
+
+# Health check endpoint (no auth required)
+location /health {
+    auth_basic off;
+    proxy_pass http://127.0.0.1:8000/health;
+}
+
+# Telegram webhook endpoint (no auth required for bot)
+location /telegram/ {
+    auth_basic off;
+    proxy_pass http://127.0.0.1:8000/telegram/;
+    ...
+}
+```
+
+**Testing Results:**
+✅ **Voice message processed successfully!**
+- Webhook: `POST /telegram/ → 200 OK`
+- Voice downloaded: 10 seconds, 191 KB
+- Whisper transcription: "Задача касается лаборатории. Мне в понедельник необходимо встретиться с Вадим Семеновичем в 14.00."
+- GPT-5 Nano parsing: Correct business (INVENTUM LAB), deadline (03.11.2025 14:00)
+- Task created: ID #46
+- Processing time: ~10 seconds total
+
+**Commits:**
+- `577ec71` - Fix telegram webhook endpoint routing
+
+**Key Learnings:**
+- Always verify Nginx auth exclusions match backend routes
+- Check production code version vs local after major changes
+- Webhook errors appear in Telegram API's `getWebhookInfo.last_error_message`
+
+**Status:** ✅ **FIXED & TESTED** - Voice messages fully operational
+
+---
+
 ### Session 8 (2025-10-29) - **Production Deployment**
 
 **Completed:**
@@ -850,12 +926,13 @@ frontend/
 - 🌐 **Web UI Live**: https://inventum.com.kz
   - 🔐 **Protected**: HTTP Basic Auth (username/password required)
   - 📋 **Credentials**: See `WEB_UI_CREDENTIALS.txt` (not in git)
-- 🤖 **Telegram Bot**: Still working (@PM_laboratory_bot)
-- 📊 **Real Data**: Frontend shows 15 production tasks (2 open, 13 done)
+- 🤖 **Telegram Bot**: Fully working (@PM_laboratory_bot) ✅
+- 📊 **Real Data**: Frontend shows production tasks
 - 🔒 **SSL**: Let's Encrypt certificates active
 
 **Next Steps for Web:**
 - [x] Add authentication - ✅ **DONE** (HTTP Basic Auth)
+- [x] Fix voice messages - ✅ **DONE** (Session 9)
 - [ ] Create task form (add new tasks from web)
 - [ ] Add charts/analytics dashboard
 - [ ] Implement Kanban board view
