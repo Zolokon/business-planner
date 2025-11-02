@@ -218,14 +218,16 @@ class TaskRepository:
     
     async def update(self, task_id: int, task_data: TaskUpdate) -> Task:
         """Update task.
-        
+
+        Auto-sets completed_at when status changes to "done".
+
         Args:
             task_id: Task ID
             task_data: Updated fields
-            
+
         Returns:
             Updated task
-            
+
         Raises:
             ValueError: If task not found
         """
@@ -233,20 +235,28 @@ class TaskRepository:
             select(TaskORM).where(TaskORM.id == task_id)
         )
         task_orm = result.scalar_one_or_none()
-        
+
         if task_orm is None:
             raise ValueError(f"Task {task_id} not found")
-        
+
+        # Store old status for comparison
+        old_status = task_orm.status
+
         # Update fields
         update_data = task_data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(task_orm, field, value)
-        
+
+        # Auto-set completed_at when status changes to "done"
+        if "status" in update_data and update_data["status"] == "done" and old_status != "done":
+            task_orm.completed_at = func.now()
+            logger.info("task_marked_as_done_auto_timestamp", task_id=task_id)
+
         await self.session.commit()
         await self.session.refresh(task_orm)
-        
-        logger.info("task_updated", task_id=task_id)
-        
+
+        logger.info("task_updated", task_id=task_id, fields_updated=list(update_data.keys()))
+
         return Task.model_validate(task_orm)
     
     async def complete(self, task_id: int, actual_duration: int) -> Task:

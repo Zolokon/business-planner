@@ -194,6 +194,7 @@ export const BusinessTasks = () => {
               <TableCell>Приоритет</TableCell>
               <TableCell>Статус</TableCell>
               <TableCell>Дедлайн</TableCell>
+              <TableCell>Завершена</TableCell>
               <TableCell>Исполнитель</TableCell>
               <TableCell align="right">Действия</TableCell>
             </TableRow>
@@ -201,7 +202,7 @@ export const BusinessTasks = () => {
           <TableBody>
             {filteredTasks.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={7} align="center">
                   <Typography color="text.secondary" py={4}>
                     Нет задач
                   </Typography>
@@ -230,6 +231,9 @@ export const BusinessTasks = () => {
                   </TableCell>
                   <TableCell>{STATUS_LABELS[task.status]}</TableCell>
                   <TableCell>{formatDeadline(task.deadline)}</TableCell>
+                  <TableCell>
+                    {task.completed_at ? formatDeadline(task.completed_at) : '—'}
+                  </TableCell>
                   <TableCell>{task.assigned_to || '—'}</TableCell>
                   <TableCell align="right">
                     {task.status !== 'done' && (
