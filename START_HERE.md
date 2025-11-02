@@ -1,7 +1,7 @@
 # 🚀 START HERE - Business Planner
 
 > **For New AI Sessions**: Read this FIRST to understand the project context
-> **Last Updated**: 2025-11-01
+> **Last Updated**: 2025-11-02
 > **Current Phase**: Production + Web UI 🟢
 
 ---
@@ -804,6 +804,59 @@ frontend/
 - Development setup
 - API endpoints reference
 - Deployment instructions (nginx configuration)
+
+---
+
+### Session 10 (2025-11-02) - **Task Completion Tracking** ⏱️
+
+**FEATURE: Automatic completed_at timestamp for analytics**
+
+**Problem:**
+User noticed that completed tasks don't show WHEN they were completed, making it impossible to track completion timeline for analytics and reporting.
+
+**Implementation:**
+
+**Backend Changes:**
+1. **Auto-set completed_at in update()** ([task_repository.py:250-253](src/infrastructure/database/repositories/task_repository.py#L250-L253)):
+   - Detects when status transitions from non-done to done
+   - Automatically sets `completed_at = NOW()`
+   - Logs timestamp setting: `task_marked_as_done_auto_timestamp`
+   - Backward compatible with existing `complete()` method
+
+2. **Database Model** (already existed):
+   - Field `completed_at` already present in TaskORM model
+   - Nullable TIMESTAMP field
+   - Set by both `complete()` and `update()` methods now
+
+**Frontend Changes:**
+3. **Web UI Display** ([BusinessTasks.tsx:197,234-236](frontend/src/pages/BusinessTasks.tsx#L197)):
+   - Added "Завершена" column to tasks table
+   - Shows formatted completion date/time for done tasks
+   - Displays "—" for tasks not yet completed
+   - Uses same `formatDeadline()` function for consistency
+
+**Database Migration:**
+4. **Backfill Script** ([migrations/add_completed_at_to_existing_tasks.sql](migrations/add_completed_at_to_existing_tasks.sql)):
+   - Created SQL to set `completed_at = updated_at` for existing done tasks
+   - Applied to production: 0 tasks updated (all 13 already had timestamps from `complete()` method)
+   - Verified: All completed tasks have proper timestamps
+
+**Testing:**
+- ✅ All 13 existing completed tasks have `completed_at` set
+- ✅ Timestamps match `updated_at` (expected behavior)
+- ✅ Frontend shows completion dates correctly
+- ✅ Backend auto-sets timestamp on status change
+
+**Commits:**
+- `8105cf9` - Add automatic completed_at timestamp for tasks
+
+**Benefits:**
+- Full completion timeline tracking for analytics
+- Can measure actual task duration
+- Better reporting on team productivity
+- Foundation for future analytics features
+
+**Status:** ✅ **DEPLOYED** - Completion tracking active
 
 ---
 
