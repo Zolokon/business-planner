@@ -21,27 +21,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
 from src.domain.models import Task
+from src.domain.constants import BUSINESS_NAMES, PRIORITY_CIRCLES
 from src.infrastructure.database.repositories.task_repository import TaskRepository
 from src.utils.logger import logger
-
-
-# ============================================================================
-# Constants
-# ============================================================================
-
-BUSINESS_NAMES = {
-    1: "МАСТЕРСКАЯ INVENTUM",
-    2: "ЛАБОРАТОРИЯ INVENTUM LAB",
-    3: "R&D",
-    4: "TRADE"
-}
-
-PRIORITY_CIRCLES = {
-    1: "🔴",  # Высокий - Red
-    2: "🟡",  # Средний - Yellow
-    3: "🟢",  # Низкий - Green
-    4: "⚪"   # Отложенный - White
-}
 
 
 # ============================================================================

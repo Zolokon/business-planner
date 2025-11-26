@@ -85,19 +85,16 @@ Thumbs.db
 .DS_Store
 
 # Project specific
-# Uncomment when needed
 # data/
 # models/
 # checkpoints/
-
-# Temporary scripts
-simple_init.py
-check_models.py
 
 # Docker volumes
 postgres_data/
 redis_data/
 
-
-
+# Credentials (local only)
 WEB_UI_CREDENTIALS.txt
+
+# Claude plans
+.claude/plans/
