@@ -6,7 +6,8 @@ Handles scheduled tasks like daily summaries, weekly analytics, etc.
 Uses APScheduler for cron-like scheduling.
 
 Reference:
-- Daily summary at 9:30 AM
+- Daily summary at 9:30 AM (Mon-Fri only)
+- Evening summary at 7 PM (Mon-Fri only)
 - Weekly analytics on Fridays
 """
 
@@ -135,19 +136,29 @@ def init_scheduler() -> AsyncIOScheduler:
     # Create scheduler with asyncio executor
     scheduler_instance = AsyncIOScheduler(timezone="Asia/Almaty")
 
-    # Add daily summary job (9:30 AM every day)
+    # Add daily summary job (9:30 AM, Monday-Friday only)
     scheduler_instance.add_job(
         daily_summary_job,
-        trigger=CronTrigger(hour=9, minute=30, timezone="Asia/Almaty"),
+        trigger=CronTrigger(
+            day_of_week="mon-fri",
+            hour=9,
+            minute=30,
+            timezone="Asia/Almaty"
+        ),
         id="daily_summary",
         name="Daily Task Summary",
         replace_existing=True
     )
 
-    # Add evening summary job (7 PM every day)
+    # Add evening summary job (7 PM, Monday-Friday only)
     scheduler_instance.add_job(
         evening_summary_job,
-        trigger=CronTrigger(hour=19, minute=0, timezone="Asia/Almaty"),
+        trigger=CronTrigger(
+            day_of_week="mon-fri",
+            hour=19,
+            minute=0,
+            timezone="Asia/Almaty"
+        ),
         id="evening_summary",
         name="Evening Task Summary",
         replace_existing=True
