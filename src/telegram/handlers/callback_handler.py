@@ -70,6 +70,8 @@ async def handle_callback_query(
             await handle_edit_callback(query, context, int(param))
         elif action == "edit_title":
             await handle_edit_title_callback(query, context, int(param))
+        elif action == "edit_transcript":
+            await handle_edit_transcript_callback(query, context, int(param))
         elif action == "edit_priority":
             await handle_edit_priority_callback(query, context, int(param))
         elif action == "edit_deadline":
@@ -224,11 +226,14 @@ async def handle_edit_callback(
 
         keyboard = [
             [
-                InlineKeyboardButton("Название", callback_data=f"edit_title:{task_id}"),
-                InlineKeyboardButton("Приоритет", callback_data=f"edit_priority:{task_id}")
+                InlineKeyboardButton("Текст", callback_data=f"edit_transcript:{task_id}"),
+                InlineKeyboardButton("Название", callback_data=f"edit_title:{task_id}")
             ],
             [
-                InlineKeyboardButton("Дедлайн", callback_data=f"edit_deadline:{task_id}"),
+                InlineKeyboardButton("Приоритет", callback_data=f"edit_priority:{task_id}"),
+                InlineKeyboardButton("Дедлайн", callback_data=f"edit_deadline:{task_id}")
+            ],
+            [
                 InlineKeyboardButton("Отмена", callback_data=f"edit_cancel:{task_id}")
             ]
         ]
@@ -262,6 +267,62 @@ async def handle_edit_title_callback(
         f"✏️ **Изменение названия задачи #{task_id}**\n\n"
         f"Отправьте новое название задачи текстовым сообщением."
     )
+
+
+async def handle_edit_transcript_callback(
+    query,
+    context: ContextTypes.DEFAULT_TYPE,
+    task_id: int
+) -> None:
+    """Handle edit transcript button - show current transcript and prompt for edit.
+
+    Args:
+        query: Callback query
+        context: Bot context
+        task_id: Task ID
+    """
+
+    logger.info("callback_edit_transcript", task_id=task_id)
+
+    try:
+        session_gen = get_session()
+        session = await anext(session_gen)
+        try:
+            repo = TaskRepository(session)
+            metadata = await repo.get_metadata(task_id)
+
+            if metadata is None:
+                await query.edit_message_text(f"[ОШИБКА] Задача #{task_id} не найдена")
+                return
+
+            transcript = metadata.get("transcript")
+
+            if not transcript:
+                await query.edit_message_text(
+                    f"РЕДАКТИРОВАНИЕ ТЕКСТА\n\n"
+                    f"Задача #{task_id} была создана не голосом.\n"
+                    f"Редактирование транскрипта недоступно."
+                )
+                return
+
+        finally:
+            await session.close()
+
+        # Store task_id in user context for next message
+        context.user_data["editing_task_id"] = task_id
+        context.user_data["editing_field"] = "transcript"
+
+        await query.edit_message_text(
+            f"РЕДАКТИРОВАНИЕ ТЕКСТА\n\n"
+            f"Текущий транскрипт:\n"
+            f'"{transcript}"\n\n'
+            f"Отправьте исправленный текст сообщением.\n"
+            f"Задача будет перепарсена автоматически."
+        )
+
+    except Exception as e:
+        logger.error("callback_edit_transcript_failed", task_id=task_id, error=str(e))
+        await query.edit_message_text("[ОШИБКА] Ошибка при загрузке транскрипта")
 
 
 async def handle_edit_priority_callback(

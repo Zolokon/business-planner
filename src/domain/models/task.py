@@ -97,7 +97,12 @@ class TaskCreate(TaskBase):
         pattern="^(voice|text|api)$",
         description="How task was created"
     )
-    
+
+    task_metadata: dict | None = Field(
+        default=None,
+        description="Metadata including transcript for voice tasks"
+    )
+
     @field_validator("deadline", "deadline_text")
     @classmethod
     def validate_deadline_fields(cls, v, info):

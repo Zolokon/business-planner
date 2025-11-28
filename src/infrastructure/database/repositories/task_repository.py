@@ -412,9 +412,47 @@ class TaskRepository:
                 TaskORM.deadline <= end_datetime
             )
         ).order_by(TaskORM.deadline, TaskORM.priority)
-        
+
         result = await self.session.execute(query)
         tasks_orm = result.scalars().all()
-        
+
         return [Task.model_validate(t) for t in tasks_orm]
 
+    async def get_metadata(self, task_id: int) -> dict | None:
+        """Get task metadata.
+
+        Args:
+            task_id: Task ID
+
+        Returns:
+            Task metadata dict or None if task not found
+        """
+        result = await self.session.execute(
+            select(TaskORM).where(TaskORM.id == task_id)
+        )
+        task_orm = result.scalar_one_or_none()
+
+        if task_orm is None:
+            return None
+
+        return task_orm.task_metadata or {}
+
+    async def update_metadata(self, task_id: int, metadata: dict) -> None:
+        """Update task metadata.
+
+        Args:
+            task_id: Task ID
+            metadata: New metadata dict (replaces existing)
+        """
+        result = await self.session.execute(
+            select(TaskORM).where(TaskORM.id == task_id)
+        )
+        task_orm = result.scalar_one_or_none()
+
+        if task_orm is None:
+            raise ValueError(f"Task {task_id} not found")
+
+        task_orm.task_metadata = metadata
+        await self.session.commit()
+
+        logger.info("task_metadata_updated", task_id=task_id)

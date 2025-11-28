@@ -1,7 +1,7 @@
 """
 Daily Summary Service - Business Planner.
 
-Sends daily task summary to user every morning at 8 AM.
+Sends daily task summary to user every morning at 7 AM.
 
 Features:
 - Groups tasks by business
@@ -9,13 +9,14 @@ Features:
 - Color-coded priorities (🔴🟡🟢)
 - Sorted by deadline time then priority
 - Shows executor if assigned
+- Does NOT send message if there are no tasks
 
 Reference:
-- User requirement: "в 8 утра мне должно приходить сообщение со списком задач"
+- User requirement: "в 7 утра мне должно приходить сообщение со списком задач"
 """
 
 from datetime import datetime, date, timedelta
-from typing import Dict, List
+from typing import Dict, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from telegram import Bot
 
@@ -137,7 +138,7 @@ def sort_tasks_key(task: Task) -> tuple:
 async def generate_daily_summary(
     session: AsyncSession,
     user_id: int
-) -> str:
+) -> Optional[str]:
     """Generate daily task summary for user.
 
     Args:
@@ -145,7 +146,7 @@ async def generate_daily_summary(
         user_id: User ID
 
     Returns:
-        Formatted summary message
+        Formatted summary message, or None if no tasks
 
     Logic:
     - Fetch all active tasks (status != 'completed')
@@ -153,6 +154,7 @@ async def generate_daily_summary(
     - Group by business
     - Sort within business: by deadline time, then priority
     - Format message
+    - Returns None if no tasks (no message will be sent)
     """
     repo = TaskRepository(session)
 
@@ -191,9 +193,9 @@ async def generate_daily_summary(
             relevant_tasks.sort(key=sort_tasks_key)
             tasks_by_business[business_id] = relevant_tasks
 
-    # Format message
+    # No tasks - return None (no message will be sent)
     if not tasks_by_business:
-        return "📋 ЗАДАЧИ НА СЕГОДНЯ\n\nНет активных задач 👍"
+        return None
 
     # Header
     today_formatted = today.strftime("%d %B")
@@ -248,7 +250,7 @@ async def send_daily_summary_to_user(
     user_telegram_id: int,
     session: AsyncSession,
     user_id: int
-) -> None:
+) -> bool:
     """Send daily summary to user via Telegram.
 
     Args:
@@ -257,12 +259,24 @@ async def send_daily_summary_to_user(
         session: Database session
         user_id: User ID in database
 
+    Returns:
+        True if message was sent, False if no tasks (nothing to send)
+
     Raises:
         Exception if sending fails
     """
     try:
         # Generate summary
         message = await generate_daily_summary(session, user_id)
+
+        # No tasks - don't send anything
+        if message is None:
+            logger.info(
+                "daily_summary_skipped_no_tasks",
+                user_id=user_id,
+                telegram_id=user_telegram_id
+            )
+            return False
 
         # Send to user
         await bot.send_message(
@@ -277,6 +291,7 @@ async def send_daily_summary_to_user(
             telegram_id=user_telegram_id,
             task_count=message.count("🔴") + message.count("🟡") + message.count("🟢")
         )
+        return True
 
     except Exception as e:
         logger.error(

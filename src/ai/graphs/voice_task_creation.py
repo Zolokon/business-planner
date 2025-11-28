@@ -271,6 +271,12 @@ async def create_task_db_node(
                 except (ValueError, TypeError) as e:
                     logger.warning("deadline_parse_failed", deadline=state.get("parsed_deadline"), error=str(e))
 
+            # Save transcript in metadata for editing later
+            task_metadata = {
+                "transcript": state.get("transcript"),
+                "transcript_confidence": state.get("transcript_confidence")
+            }
+
             task_data = TaskCreate(
                 title=state["parsed_title"],
                 business_id=state["parsed_business_id"],
@@ -278,7 +284,8 @@ async def create_task_db_node(
                 estimated_duration=state.get("estimated_duration"),
                 deadline=deadline,
                 deadline_text=deadline_text,
-                created_via="voice"
+                created_via="voice",
+                task_metadata=task_metadata
             )
 
             task = await repo.create(task_data, user_id=state["user_id"])
