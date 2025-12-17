@@ -170,19 +170,18 @@ async def generate_evening_summary(
     incomplete_tasks_by_business: Dict[int, List[Task]] = {}
 
     for business_id in [1, 2, 3, 4]:
-        # Get all open/in_progress tasks
+        # Get only open tasks (not completed/archived)
         tasks = await repo.find_by_business(
             user_id=user_id,
             business_id=business_id,
-            status=None,  # Get all, then filter
+            status="open",  # Only open tasks
             limit=100
         )
 
         # Filter incomplete tasks with deadline today or overdue
         incomplete_tasks = [
             task for task in tasks
-            if task.status in ["open", "in_progress"]  # Not done
-            and task.priority != 4  # Not backlog
+            if task.priority != 4  # Not backlog
             and task.deadline is not None  # Has deadline
             and task.deadline.date() <= today  # Today or overdue
         ]

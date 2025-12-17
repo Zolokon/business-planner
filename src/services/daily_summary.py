@@ -167,16 +167,13 @@ async def generate_daily_summary(
     tasks_by_business: Dict[int, List[Task]] = {}
 
     for business_id in [1, 2, 3, 4]:
-        # Get open/in_progress tasks for this business (exclude completed)
+        # Get only open tasks for this business (exclude completed/archived)
         tasks = await repo.find_by_business(
             user_id=user_id,
             business_id=business_id,
-            status=None,  # Get all statuses, then filter
+            status="open",  # Only open tasks
             limit=100
         )
-
-        # Filter out completed tasks
-        tasks = [t for t in tasks if t.status != "done"]
 
         # Filter: relevant tasks only (today/tomorrow, not backlog)
         relevant_tasks = [
