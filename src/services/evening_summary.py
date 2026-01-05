@@ -178,12 +178,10 @@ async def generate_evening_summary(
             limit=100
         )
 
-        # Filter incomplete tasks with deadline today or overdue
+        # Filter: all open tasks except backlog (so user can complete any task)
         incomplete_tasks = [
             task for task in tasks
             if task.priority != 4  # Not backlog
-            and task.deadline is not None  # Has deadline
-            and task.deadline.date() <= today  # Today or overdue
         ]
 
         if incomplete_tasks:
