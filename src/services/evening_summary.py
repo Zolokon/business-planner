@@ -9,7 +9,7 @@ Features:
 - Shows overdue tasks (deadline passed)
 - Grouped by business
 - Interactive buttons: Reschedule to tomorrow / Complete
-- Celebration message if all done
+- Skips sending if all tasks are done (no noise)
 
 Reference:
 - User requirement: "в конце дня хочу увидеть задачи которые не выполнились"
@@ -151,7 +151,7 @@ async def generate_evening_summary(
 
     Returns:
         Tuple of (header_message, list of (task_message, keyboard) tuples)
-        If all tasks done: (success_message, None)
+        If all tasks done: (None, None) — caller should skip sending
 
     Logic:
     - Fetch tasks with status "open" or "in_progress"
@@ -189,15 +189,10 @@ async def generate_evening_summary(
             incomplete_tasks.sort(key=sort_tasks_key)
             incomplete_tasks_by_business[business_id] = incomplete_tasks
 
-    # Check if all done
+    # If no incomplete tasks — skip sending entirely
     if not incomplete_tasks_by_business:
-        success_message = (
-            "🎉 ОТЛИЧНАЯ РАБОТА!\n\n"
-            "Все задачи на сегодня выполнены.\n"
-            "Хорошего вечера!"
-        )
         logger.info("evening_summary_all_done", user_id=user_id)
-        return (success_message, None)
+        return (None, None)
 
     # Build header
     today_formatted = today.strftime("%d.%m.%Y")
@@ -260,6 +255,16 @@ async def send_evening_summary_to_user(
     try:
         # Generate summary
         header, task_messages = await generate_evening_summary(session, user_id)
+
+        # If no incomplete tasks — don't send anything
+        if header is None:
+            logger.info(
+                "evening_summary_skipped",
+                user_id=user_id,
+                telegram_id=user_telegram_id,
+                reason="all_tasks_done"
+            )
+            return
 
         # Send header
         await bot.send_message(
